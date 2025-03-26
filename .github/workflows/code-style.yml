@@ -1,0 +1,18 @@
+name: Code Style
+
+on:
+  push:
+
+jobs:
+  editorconfig:
+    name: EditorConfig
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup EditorConfig Checker
+        uses: editorconfig-checker/action-editorconfig-checker@main
+
+      - name: Run EditorConfig Checker
+        run: editorconfig-checker
