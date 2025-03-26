@@ -16,4 +16,3 @@
 ## License
 
 This work is licensed under the Creative Commons Zero (CC0) license. See [LICENSE](LICENSE) for more information.
-```

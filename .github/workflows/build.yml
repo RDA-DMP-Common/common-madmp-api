@@ -1,0 +1,75 @@
+name: Build
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  validate:
+    name: Validate Specification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python [3.12]
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install validator [0.7.1]
+        run: |
+          pip install openapi-spec-validator==0.7.1
+
+      - name: Run validator
+        run: |
+          openapi-spec-validator openapi.yaml
+
+  swagger:
+    name: Swagger UI
+    runs-on: ubuntu-latest
+    needs: validate
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Swagger UI
+        run: |
+          bash bin/swagger-ui.sh
+
+      - name: Verify Swagger UI
+        run: |
+          ls -lah dist/
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/
+
+  deploy:
+    name: Deploy GitHub Pages
+    runs-on: ubuntu-latest
+    needs: swagger
+
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && github.event.repository.default_branch == github.ref_name)
+
+    concurrency:
+      group: "pages"
+      cancel-in-progress: true
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
