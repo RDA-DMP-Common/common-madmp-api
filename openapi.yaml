@@ -1,839 +1,611 @@
-openapi: 3.1.1
-info:
-  title: Swagger Petstore - OpenAPI 3.1
-  description: |-
-    This is a sample Pet Store Server based on the OpenAPI 3.0 specification.  You can find out more about
-    Swagger at [https://swagger.io](https://swagger.io). In the third iteration of the pet store, we've switched to the design first approach!
-    You can now help us improve the API whether it's by making changes to the definition itself or to the code.
-    That way, with time, we can improve the API in general, and expose some of the new features in OAS3.
+openapi: 3.0.3
 
-    Some useful links:
-    - [The Pet Store repository](https://github.com/swagger-api/swagger-petstore)
-    - [The source API definition for the Pet Store](https://github.com/swagger-api/swagger-petstore/blob/master/src/main/resources/openapi.yaml)
-  termsOfService: https://swagger.io/terms/
-  contact:
-    email: apiteam@swagger.io
+info:
+  title: Common maDMP API
+  description: |-
+    WIP specification of Common maDMP API using the RDA DMP Common Standard.
   license:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
-  version: 1.0.27-SNAPSHOT
-externalDocs:
-  description: Find out more about Swagger
-  url: https://swagger.io
-servers:
-  - url: https://petstore3.swagger.io/api/v3
+  version: 0.1.0
+
 tags:
-  - name: pet
-    description: Everything about your Pets
-    externalDocs:
-      description: Find out more
-      url: https://swagger.io
-  - name: store
-    description: Access to Petstore orders
-    externalDocs:
-      description: Find out more about our store
-      url: https://swagger.io
-  - name: user
-    description: Operations about user
+  - name: DMP
+    description: Data Management Plan (top-level entity)
+  - name: Contact
+    description: ""
+  - name: Contributor
+    description: ""
+  - name: Cost
+    description: ""
+  - name: Dataset
+    description: ""
+  - name: Distribution
+    description: ""
+  - name: Funding
+    description: ""
+  - name: Host
+    description: ""
+  - name: License
+    description: ""
+  - name: Metadata
+    description: ""
+  - name: Project
+    description: ""
+  - name: Security and Privacy
+    description: ""
+  - name: Technical Resource
+    description: ""
+
 paths:
-  /pet:
-    put:
+  /dmps/query:
+    post:
       tags:
-        - pet
-      summary: Update an existing pet.
-      description: Update an existing pet by Id.
-      operationId: updatePet
+        - DMP
+      summary: Query DMPs
+      description: Retrieve data management plans by sending a query.
+      operationId: queryDMPs
       requestBody:
-        description: Update an existent pet in the store
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Pet'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/Pet'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Pet'
+              $ref: '#/components/schemas/DMPQueryRequest'
         required: true
       responses:
         '200':
-          description: Successful operation
+          description: Successful query
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Pet'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/Pet'
+                $ref: '#/components/schemas/DMPQueryResponse'
         '400':
-          description: Invalid ID supplied
-        '404':
-          description: Pet not found
-        '422':
-          description: Validation exception
+          description: Invalid query request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
         default:
           description: Unexpected error
-      security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
+  /dmps:
     post:
       tags:
-        - pet
-      summary: Add a new pet to the store.
-      description: Add a new pet to the store.
-      operationId: addPet
+        - DMP
+      summary: Create a DMP
+      description: Create a new data management plans.
+      operationId: postDMP
       requestBody:
-        description: Create a new pet in the store
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Pet'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/Pet'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Pet'
+              $ref: '#/components/schemas/DMPCreateRequest'
         required: true
       responses:
-        '200':
-          description: Successful operation
+        '201':
+          description: Successful creation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Pet'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/Pet'
+                $ref: '#/components/schemas/DMPFull'
         '400':
-          description: Invalid input
-        '422':
-          description: Validation exception
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
         default:
           description: Unexpected error
-      security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
-  /pet/findByStatus:
+  /dmps/{dmpId}:
     get:
       tags:
-        - pet
-      summary: Finds Pets by status.
-      description: Multiple status values can be provided with comma separated strings.
-      operationId: findPetsByStatus
+        - DMP
+      summary: Retrieve a DMPs
+      description: Retrieve a single data management plan via internal identifier.
+      operationId: getDMP
       parameters:
-        - name: status
-          in: query
-          description: Status values that need to be considered for filter
-          required: false
-          explode: true
-          schema:
-            type: string
-            default: available
-            enum:
-              - available
-              - pending
-              - sold
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Pet'
-            application/xml:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Pet'
-        '400':
-          description: Invalid status value
-        default:
-          description: Unexpected error
-      security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
-  /pet/findByTags:
-    get:
-      tags:
-        - pet
-      summary: Finds Pets by tags.
-      description: Multiple tags can be provided with comma separated strings. Use tag1, tag2, tag3 for testing.
-      operationId: findPetsByTags
-      parameters:
-        - name: tags
-          in: query
-          description: Tags to filter by
-          required: false
-          explode: true
-          schema:
-            type: array
-            items:
-              type: string
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Pet'
-            application/xml:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Pet'
-        '400':
-          description: Invalid tag value
-        default:
-          description: Unexpected error
-      security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
-  /pet/{petId}:
-    get:
-      tags:
-        - pet
-      summary: Find pet by ID.
-      description: Returns a single pet.
-      operationId: getPetById
-      parameters:
-        - name: petId
+        - name: dmpId
           in: path
-          description: ID of pet to return
+          description: ID of DMP to update
           required: true
           schema:
-            type: integer
-            format: int64
+            type: string
       responses:
         '200':
-          description: successful operation
+          description: Found DMP
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Pet'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/Pet'
+                $ref: '#/components/schemas/DMPFull'
         '400':
-          description: Invalid ID supplied
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
         '404':
-          description: Pet not found
-        default:
-          description: Unexpected error
-      security:
-        - api_key: []
-        - petstore_auth:
-            - write:pets
-            - read:pets
-    post:
-      tags:
-        - pet
-      summary: Updates a pet in the store with form data.
-      description: Updates a pet resource based on the form data.
-      operationId: updatePetWithForm
-      parameters:
-        - name: petId
-          in: path
-          description: ID of pet that needs to be updated
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: name
-          in: query
-          description: Name of pet that needs to be updated
-          schema:
-            type: string
-        - name: status
-          in: query
-          description: Status of pet that needs to be updated
-          schema:
-            type: string
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Pet'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/Pet'
-        '400':
-          description: Invalid input
-        default:
-          description: Unexpected error
-      security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
-    delete:
-      tags:
-        - pet
-      summary: Deletes a pet.
-      description: Delete a pet.
-      operationId: deletePet
-      parameters:
-        - name: api_key
-          in: header
-          description: ''
-          required: false
-          schema:
-            type: string
-        - name: petId
-          in: path
-          description: Pet id to delete
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: Pet deleted
-        '400':
-          description: Invalid pet value
-        default:
-          description: Unexpected error
-      security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
-  /pet/{petId}/uploadImage:
-    post:
-      tags:
-        - pet
-      summary: Uploads an image.
-      description: Upload image of the pet.
-      operationId: uploadFile
-      parameters:
-        - name: petId
-          in: path
-          description: ID of pet to update
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: additionalMetadata
-          in: query
-          description: Additional Metadata
-          required: false
-          schema:
-            type: string
-      requestBody:
-        content:
-          application/octet-stream:
-            schema:
-              type: string
-              format: binary
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiResponse'
-        '400':
-          description: No file uploaded
-        '404':
-          description: Pet not found
-        default:
-          description: Unexpected error
-      security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
-  /store/inventory:
-    get:
-      tags:
-        - store
-      summary: Returns pet inventories by status.
-      description: Returns a map of status codes to quantities.
-      operationId: getInventory
-      x-swagger-router-controller: OrderController
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties:
-                  type: integer
-                  format: int32
-        default:
-          description: Unexpected error
-      security:
-        - api_key: []
-  /store/order:
-    post:
-      tags:
-        - store
-      summary: Place an order for a pet.
-      description: Place a new order in the store.
-      x-swagger-router-controller: OrderController
-      operationId: placeOrder
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Order'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/Order'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Order'
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Order'
-        '400':
-          description: Invalid input
-        '422':
-          description: Validation exception
-        default:
-          description: Unexpected error
-  /store/order/{orderId}:
-    get:
-      tags:
-        - store
-      summary: Find purchase order by ID.
-      x-swagger-router-controller: OrderController
-      description: For valid response try integer IDs with value <= 5 or > 10. Other values will generate exceptions.
-      operationId: getOrderById
-      parameters:
-        - name: orderId
-          in: path
-          description: ID of order that needs to be fetched
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Order'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/Order'
-        '400':
-          description: Invalid ID supplied
-        '404':
-          description: Order not found
-        default:
-          description: Unexpected error
-    delete:
-      tags:
-        - store
-      summary: Delete purchase order by identifier.
-      description: For valid response try integer IDs with value < 1000. Anything above 1000 or non-integers will generate API errors.
-      x-swagger-router-controller: OrderController
-      operationId: deleteOrder
-      parameters:
-        - name: orderId
-          in: path
-          description: ID of the order that needs to be deleted
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: order deleted
-        '400':
-          description: Invalid ID supplied
-        '404':
-          description: Order not found
-        default:
-          description: Unexpected error
-  /user:
-    post:
-      tags:
-        - user
-      summary: Create user.
-      description: This can only be done by the logged in user.
-      x-swagger-router-controller: UserController
-      operationId: createUser
-      requestBody:
-        description: Created user object
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/User'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/User'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/User'
-        default:
-          description: Unexpected error
-  /user/createWithList:
-    post:
-      tags:
-        - user
-      summary: Creates list of users with given input array.
-      description: Creates list of users with given input array.
-      x-swagger-router-controller: UserController
-      operationId: createUsersWithListInput
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/User'
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/User'
-        default:
-          description: Unexpected error
-  /user/login:
-    get:
-      tags:
-        - user
-      summary: Logs user into the system.
-      description: Log into the system.
-      operationId: loginUser
-      parameters:
-        - name: username
-          in: query
-          description: The user name for login
-          required: false
-          schema:
-            type: string
-        - name: password
-          in: query
-          description: The password for login in clear text
-          required: false
-          schema:
-            type: string
-      responses:
-        '200':
-          description: successful operation
-          headers:
-            X-Rate-Limit:
-              description: calls per hour allowed by the user
-              schema:
-                type: integer
-                format: int32
-            X-Expires-After:
-              description: date in UTC when token expires
-              schema:
-                type: string
-                format: date-time
-          content:
-            application/xml:
-              schema:
-                type: string
-            application/json:
-              schema:
-                type: string
-        '400':
-          description: Invalid username/password supplied
-        default:
-          description: Unexpected error
-  /user/logout:
-    get:
-      tags:
-        - user
-      summary: Logs out current logged in user session.
-      description: Log user out of the system.
-      operationId: logoutUser
-      parameters: []
-      responses:
-        '200':
-          description: successful operation
-        default:
-          description: Unexpected error
-  /user/{username}:
-    get:
-      tags:
-        - user
-      summary: Get user by user name.
-      description: Get user detail based on username.
-      operationId: getUserByName
-      parameters:
-        - name: username
-          in: path
-          description: The name that needs to be fetched. Use user1 for testing
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/User'
-        '400':
-          description: Invalid username supplied
-        '404':
-          description: User not found
+          description: Not found
         default:
           description: Unexpected error
     put:
       tags:
-        - user
-      summary: Update user resource.
-      description: This can only be done by the logged in user.
-      x-swagger-router-controller: UserController
-      operationId: updateUser
+        - DMP
+      summary: Update a DMP
+      description: Update an existing data management plans.
+      operationId: putDMP
       parameters:
-        - name: username
+        - name: dmpId
           in: path
-          description: name that need to be deleted
+          description: ID of DMP to return
           required: true
           schema:
             type: string
       requestBody:
-        description: Update an existent user in the store
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/User'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/User'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/User'
+              $ref: '#/components/schemas/DMPUpdateRequest'
+        required: true
       responses:
         '200':
-          description: successful operation
+          description: Successful update
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DMPFull'
         '400':
-          description: bad request
-        '404':
-          description: user not found
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
         default:
           description: Unexpected error
     delete:
       tags:
-        - user
-      summary: Delete user resource.
-      description: This can only be done by the logged in user.
-      operationId: deleteUser
+        - DMP
+      summary: Delete a DMP
+      description: Delete an existing data management plans.
+      operationId: deleteDMP
       parameters:
-        - name: username
+        - name: dmpId
           in: path
-          description: The name that needs to be deleted
+          description: ID of DMP to delete
           required: true
           schema:
             type: string
       responses:
-        '200':
-          description: User deleted
+        '204':
+          description: Successful deletion
         '400':
-          description: Invalid username supplied
-        '404':
-          description: User not found
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
         default:
           description: Unexpected error
+
+  /dmps/{dmpId}/contacts:
+    get:
+      tags:
+        - Contact
+      summary: List contacts of a DMP
+      # TODO
+      responses: {}
+    post:
+      tags:
+        - Contact
+      summary: Create a contact
+      # TODO
+      responses: {}
+  /dmps/{dmpId}/contacts/{contactId}:
+    get:
+      tags:
+        - Contact
+      summary: Get a contact
+      # TODO
+      responses: {}
+    put:
+      tags:
+        - Contact
+      summary: Update a contact
+      # TODO
+      responses: {}
+    delete:
+      tags:
+        - Contact
+      summary: Delete a contact
+      # TODO
+      responses: {}
+
+  /dmps/{dmpId}/contributors:
+    get:
+      tags:
+        - Contributor
+      summary: List contributors of a DMP
+      # TODO
+      responses: {}
+    post:
+      tags:
+        - Contributor
+      summary: Create a contributor
+      # TODO
+      responses: {}
+  /dmps/{dmpId}/contributors/{contributorId}:
+    get:
+      tags:
+        - Contributor
+      summary: Get a contributor
+      # TODO
+      responses: {}
+    put:
+      tags:
+        - Contributor
+      summary: Update a contributor
+      # TODO
+      responses: {}
+    delete:
+      tags:
+        - Contributor
+      summary: Delete a contributor
+      # TODO
+      responses: {}
+
+  /dmps/{dmpId}/costs:
+    get:
+      tags:
+        - Cost
+      summary: List costs of a DMP
+      # TODO
+      responses: {}
+    post:
+      tags:
+        - Cost
+      summary: Create a cost
+      # TODO
+      responses: {}
+  /dmps/{dmpId}/costs/{costId}:
+    get:
+      tags:
+        - Cost
+      summary: Get a cost
+      # TODO
+      responses: {}
+    put:
+      tags:
+        - Cost
+      summary: Update a cost
+      # TODO
+      responses: {}
+    delete:
+      tags:
+        - Cost
+      summary: Delete a cost
+      # TODO
+      responses: {}
+
+  /dmps/{dmpId}/projects:
+    get:
+      tags:
+        - Project
+      summary: List projects of a DMP
+      # TODO
+      responses: {}
+    post:
+      tags:
+        - Project
+      summary: Create a project
+      # TODO
+      responses: {}
+  /dmps/{dmpId}/projects/{projectId}:
+    get:
+      tags:
+        - Project
+      summary: Get a project
+      # TODO
+      responses: {}
+    put:
+      tags:
+        - Project
+      summary: Update a project
+      # TODO
+      responses: {}
+    delete:
+      tags:
+        - Project
+      summary: Delete a project
+      # TODO
+      responses: {}
+
+  /dmps/{dmpId}/projects/{projectId}/fundings:
+    get:
+      tags:
+        - Funding
+      summary: List fundings of a project
+      # TODO
+      responses: {}
+    post:
+      tags:
+        - Funding
+      summary: Create a funding
+      # TODO
+      responses: {}
+  /dmps/{dmpId}/projects/{projectId}/fundings/{fundingId}:
+    get:
+      tags:
+        - Funding
+      summary: Get a funding
+      # TODO
+      responses: {}
+    put:
+      tags:
+        - Funding
+      summary: Update a funding
+      # TODO
+      responses: {}
+    delete:
+      tags:
+        - Funding
+      summary: Delete a funding
+      # TODO
+      responses: {}
+
+  /dmps/{dmpId}/datasets/query:
+    post:
+      tags:
+        - Dataset
+      summary: Query datasets of a DMP
+      # TODO
+      responses: {}
+  /dmps/{dmpId}/datasets:
+    post:
+      tags:
+        - Dataset
+      summary: Create a dataset
+      # TODO
+      responses: {}
+  /dmps/{dmpId}/datasets/{datasetId}:
+    get:
+      tags:
+        - Dataset
+      summary: Get a dataset
+      # TODO
+      responses: {}
+    put:
+      tags:
+        - Dataset
+      summary: Update a dataset
+      # TODO
+      responses: {}
+    delete:
+      tags:
+        - Dataset
+      summary: Delete a dataset
+      # TODO
+      responses: {}
+
+  /dmps/{dmpId}/datasets/{datasetId}/distributions:
+    get:
+      tags:
+        - Distribution
+      summary: List distributions of a dataset
+      # TODO
+      responses: {}
+    post:
+      tags:
+        - Distribution
+      summary: Create a distribution
+      # TODO
+      responses: {}
+  /dmps/{dmpId}/datasets/{datasetId}/distributions/{distributionId}:
+    get:
+      tags:
+        - Distribution
+      summary: Get a distribution
+      # TODO
+      responses: {}
+    put:
+      tags:
+        - Distribution
+      summary: Update a distribution
+      # TODO
+      responses: {}
+    delete:
+      tags:
+        - Distribution
+      summary: Delete a distribution
+      # TODO
+      responses: {}
+
+  /dmps/{dmpId}/datasets/{datasetId}/distributions/{distributionId}/licenses:
+    get:
+      tags:
+        - License
+      summary: List licenses of a distribution
+      # TODO
+      responses: {}
+    post:
+      tags:
+        - License
+      summary: Create a license
+      # TODO
+      responses: {}
+  /dmps/{dmpId}/datasets/{datasetId}/distributions/{distributionId}/licenses/{licenseId}:
+    get:
+      tags:
+        - License
+      summary: Get a license
+      # TODO
+      responses: {}
+    put:
+      tags:
+        - License
+      summary: Update a license
+      # TODO
+      responses: {}
+    delete:
+      tags:
+        - License
+      summary: Delete a license
+      # TODO
+      responses: {}
+
+  /dmps/{dmpId}/datasets/{datasetId}/distributions/{distributionId}/hosts:
+    get:
+      tags:
+        - Host
+      summary: List hosts of a distribution
+      # TODO
+      responses: {}
+    post:
+      tags:
+        - Host
+      summary: Create a host
+      # TODO
+      responses: {}
+  /dmps/{dmpId}/datasets/{datasetId}/distributions/{distributionId}/hosts/{hostId}:
+    get:
+      tags:
+        - Host
+      summary: Get a host
+      # TODO
+      responses: {}
+    put:
+      tags:
+        - Host
+      summary: Update a host
+      # TODO
+      responses: {}
+    delete:
+      tags:
+        - Host
+      summary: Delete a host
+      # TODO
+      responses: {}
+
+  /dmps/{dmpId}/datasets/{datasetId}/security-privacy:
+    get:
+      tags:
+        - Security and Privacy
+      summary: List security and privacy records of a dataset
+      # TODO
+      responses: {}
+    post:
+      tags:
+        - Security and Privacy
+      summary: Create a security and privacy record
+      # TODO
+      responses: {}
+  /dmps/{dmpId}/datasets/{datasetId}/security-privacy/{securityPrivacyId}:
+    get:
+      tags:
+        - Security and Privacy
+      summary: Get a security and privacy record
+      # TODO
+      responses: {}
+    put:
+      tags:
+        - Security and Privacy
+      summary: Update a security and privacy record
+      # TODO
+      responses: {}
+    delete:
+      tags:
+        - Security and Privacy
+      summary: Delete a security and privacy record
+      # TODO
+      responses: {}
+
+  /dmps/{dmpId}/datasets/{datasetId}/technical-resources:
+    get:
+      tags:
+        - Technical Resource
+      summary: List technical resources of a dataset
+      # TODO
+      responses: {}
+    post:
+      tags:
+        - Technical Resource
+      summary: Create a technical resource
+      # TODO
+      responses: {}
+  /dmps/{dmpId}/datasets/{datasetId}/technical-resources/{technicalResourceId}:
+    get:
+      tags:
+        - Technical Resource
+      summary: Get a technical resource
+      # TODO
+      responses: {}
+    put:
+      tags:
+        - Technical Resource
+      summary: Update a technical resource
+      # TODO
+      responses: {}
+    delete:
+      tags:
+        - Technical Resource
+      summary: Delete a technical resource
+      # TODO
+      responses: {}
+
+  /dmps/{dmpId}/datasets/{datasetId}/metadata:
+    get:
+      tags:
+        - Metadata
+      summary: List metadata records of a dataset
+      # TODO
+      responses: {}
+    post:
+      tags:
+        - Metadata
+      summary: Create a metadata record
+      # TODO
+      responses: {}
+  /dmps/{dmpId}/datasets/{datasetId}/metadata/{metadataId}:
+    get:
+      tags:
+        - Metadata
+      summary: Get a metadata record
+      # TODO
+      responses: {}
+    put:
+      tags:
+        - Metadata
+      summary: Update a metadata record
+      # TODO
+      responses: {}
+    delete:
+      tags:
+        - Metadata
+      summary: Delete a metadata record
+      # TODO
+      responses: {}
+
 components:
   schemas:
-    Order:
-      x-swagger-router-model: io.swagger.petstore.model.Order
+    DMPQueryRequest:
       type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-          example: 10
-        petId:
-          type: integer
-          format: int64
-          example: 198772
-        quantity:
+      properties: # TODO: add properties
+        size:
           type: integer
           format: int32
-          example: 7
-        shipDate:
-          type: string
-          format: date-time
-        status:
-          type: string
-          description: Order Status
-          example: approved
-          enum:
-            - placed
-            - approved
-            - delivered
-        complete:
-          type: boolean
-      xml:
-        name: order
-    Category:
-      x-swagger-router-model: io.swagger.petstore.model.Category
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-          example: 1
-        name:
-          type: string
-          example: Dogs
-      xml:
-        name: category
-    User:
-      x-swagger-router-model: io.swagger.petstore.model.User
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-          example: 10
-        username:
-          type: string
-          example: theUser
-        firstName:
-          type: string
-          example: John
-        lastName:
-          type: string
-          example: James
-        email:
-          type: string
-          example: john@email.com
-        password:
-          type: string
-          example: '12345'
-        phone:
-          type: string
-          example: '12345'
-        userStatus:
-          type: integer
-          description: User Status
-          format: int32
-          example: 1
-      xml:
-        name: user
-    Tag:
-      x-swagger-router-model: io.swagger.petstore.model.Tag
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-        name:
-          type: string
-      xml:
-        name: tag
-    Pet:
-      x-swagger-router-model: io.swagger.petstore.model.Pet
-      required:
-        - name
-        - photoUrls
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-          example: 10
-        name:
-          type: string
-          example: doggie
-        category:
-          $ref: '#/components/schemas/Category'
-        photoUrls:
-          type: array
-          xml:
-            wrapped: true
-          items:
-            type: string
-            xml:
-              name: photoUrl
-        tags:
-          type: array
-          xml:
-            wrapped: true
-          items:
-            $ref: '#/components/schemas/Tag'
-        status:
-          type: string
-          description: pet status in the store
-          enum:
-            - available
-            - pending
-            - sold
-      xml:
-        name: pet
-    ApiResponse:
-      type: object
-      properties:
-        code:
+          description: Integer representing the page size for pagination.
+          example: 20
+        offset:
           type: integer
           format: int32
-        type:
-          type: string
-        message:
-          type: string
-      xml:
-        name: '##default'
-  requestBodies:
-    Pet:
-      description: Pet object that needs to be added to the store
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Pet'
-        application/xml:
-          schema:
-            $ref: '#/components/schemas/Pet'
-    UserArray:
-      description: List of user object
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/User'
-  securitySchemes:
-    petstore_auth:
-      type: oauth2
-      flows:
-        implicit:
-          authorizationUrl: https://petstore3.swagger.io/oauth/authorize
-          scopes:
-            "write:pets": modify pets in your account
-            "read:pets": read your pets
-    api_key:
-      type: apiKey
-      name: api_key
-      in: header
+          description: Integer representing the results offset for pagination.
+          example: 0
+    DMPQueryResponse:
+      type: object
+      properties: {} # TODO: add properties
+    DMPCreateRequest:
+      type: object
+      properties: {} # TODO: add properties
+    DMPUpdateRequest:
+      type: object
+      properties: {} # TODO: add properties
+    DMPFull:
+      type: object
+      properties: {} # TODO: add properties
+
