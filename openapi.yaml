@@ -183,403 +183,561 @@ paths:
           description: Forbidden
         default:
           description: Unexpected error
+#
+#  /dmps/{dmpId}/contacts:
+#    get:
+#      tags:
+#        - Contact
+#      summary: List contacts of a DMP
+#      # TODO
+#      responses: {}
+#    post:
+#      tags:
+#        - Contact
+#      summary: Create a contact
+#      # TODO
+#      responses: {}
+#  /dmps/{dmpId}/contacts/{contactId}:
+#    get:
+#      tags:
+#        - Contact
+#      summary: Get a contact
+#      # TODO
+#      responses: {}
+#    put:
+#      tags:
+#        - Contact
+#      summary: Update a contact
+#      # TODO
+#      responses: {}
+#    delete:
+#      tags:
+#        - Contact
+#      summary: Delete a contact
+#      # TODO
+#      responses: {}
+#
+#  /dmps/{dmpId}/contributors:
+#    get:
+#      tags:
+#        - Contributor
+#      summary: List contributors of a DMP
+#      # TODO
+#      responses: {}
+#    post:
+#      tags:
+#        - Contributor
+#      summary: Create a contributor
+#      # TODO
+#      responses: {}
+#  /dmps/{dmpId}/contributors/{contributorId}:
+#    get:
+#      tags:
+#        - Contributor
+#      summary: Get a contributor
+#      # TODO
+#      responses: {}
+#    put:
+#      tags:
+#        - Contributor
+#      summary: Update a contributor
+#      # TODO
+#      responses: {}
+#    delete:
+#      tags:
+#        - Contributor
+#      summary: Delete a contributor
+#      # TODO
+#      responses: {}
+#
+#  /dmps/{dmpId}/costs:
+#    get:
+#      tags:
+#        - Cost
+#      summary: List costs of a DMP
+#      # TODO
+#      responses: {}
+#    post:
+#      tags:
+#        - Cost
+#      summary: Create a cost
+#      # TODO
+#      responses: {}
+#  /dmps/{dmpId}/costs/{costId}:
+#    get:
+#      tags:
+#        - Cost
+#      summary: Get a cost
+#      # TODO
+#      responses: {}
+#    put:
+#      tags:
+#        - Cost
+#      summary: Update a cost
+#      # TODO
+#      responses: {}
+#    delete:
+#      tags:
+#        - Cost
+#      summary: Delete a cost
+#      # TODO
+#      responses: {}
+#
+#  /dmps/{dmpId}/projects:
+#    get:
+#      tags:
+#        - Project
+#      summary: List projects of a DMP
+#      # TODO
+#      responses: {}
+#    post:
+#      tags:
+#        - Project
+#      summary: Create a project
+#      # TODO
+#      responses: {}
+#  /dmps/{dmpId}/projects/{projectId}:
+#    get:
+#      tags:
+#        - Project
+#      summary: Get a project
+#      # TODO
+#      responses: {}
+#    put:
+#      tags:
+#        - Project
+#      summary: Update a project
+#      # TODO
+#      responses: {}
+#    delete:
+#      tags:
+#        - Project
+#      summary: Delete a project
+#      # TODO
+#      responses: {}
+#
+#  /dmps/{dmpId}/projects/{projectId}/fundings:
+#    get:
+#      tags:
+#        - Funding
+#      summary: List fundings of a project
+#      # TODO
+#      responses: {}
+#    post:
+#      tags:
+#        - Funding
+#      summary: Create a funding
+#      # TODO
+#      responses: {}
+#  /dmps/{dmpId}/projects/{projectId}/fundings/{fundingId}:
+#    get:
+#      tags:
+#        - Funding
+#      summary: Get a funding
+#      # TODO
+#      responses: {}
+#    put:
+#      tags:
+#        - Funding
+#      summary: Update a funding
+#      # TODO
+#      responses: {}
+#    delete:
+#      tags:
+#        - Funding
+#      summary: Delete a funding
+#      # TODO
+#      responses: {}
 
-  /dmps/{dmpId}/contacts:
-    get:
-      tags:
-        - Contact
-      summary: List contacts of a DMP
-      # TODO
-      responses: {}
-    post:
-      tags:
-        - Contact
-      summary: Create a contact
-      # TODO
-      responses: {}
-  /dmps/{dmpId}/contacts/{contactId}:
-    get:
-      tags:
-        - Contact
-      summary: Get a contact
-      # TODO
-      responses: {}
-    put:
-      tags:
-        - Contact
-      summary: Update a contact
-      # TODO
-      responses: {}
-    delete:
-      tags:
-        - Contact
-      summary: Delete a contact
-      # TODO
-      responses: {}
-
-  /dmps/{dmpId}/contributors:
-    get:
-      tags:
-        - Contributor
-      summary: List contributors of a DMP
-      # TODO
-      responses: {}
-    post:
-      tags:
-        - Contributor
-      summary: Create a contributor
-      # TODO
-      responses: {}
-  /dmps/{dmpId}/contributors/{contributorId}:
-    get:
-      tags:
-        - Contributor
-      summary: Get a contributor
-      # TODO
-      responses: {}
-    put:
-      tags:
-        - Contributor
-      summary: Update a contributor
-      # TODO
-      responses: {}
-    delete:
-      tags:
-        - Contributor
-      summary: Delete a contributor
-      # TODO
-      responses: {}
-
-  /dmps/{dmpId}/costs:
-    get:
-      tags:
-        - Cost
-      summary: List costs of a DMP
-      # TODO
-      responses: {}
-    post:
-      tags:
-        - Cost
-      summary: Create a cost
-      # TODO
-      responses: {}
-  /dmps/{dmpId}/costs/{costId}:
-    get:
-      tags:
-        - Cost
-      summary: Get a cost
-      # TODO
-      responses: {}
-    put:
-      tags:
-        - Cost
-      summary: Update a cost
-      # TODO
-      responses: {}
-    delete:
-      tags:
-        - Cost
-      summary: Delete a cost
-      # TODO
-      responses: {}
-
-  /dmps/{dmpId}/projects:
-    get:
-      tags:
-        - Project
-      summary: List projects of a DMP
-      # TODO
-      responses: {}
-    post:
-      tags:
-        - Project
-      summary: Create a project
-      # TODO
-      responses: {}
-  /dmps/{dmpId}/projects/{projectId}:
-    get:
-      tags:
-        - Project
-      summary: Get a project
-      # TODO
-      responses: {}
-    put:
-      tags:
-        - Project
-      summary: Update a project
-      # TODO
-      responses: {}
-    delete:
-      tags:
-        - Project
-      summary: Delete a project
-      # TODO
-      responses: {}
-
-  /dmps/{dmpId}/projects/{projectId}/fundings:
-    get:
-      tags:
-        - Funding
-      summary: List fundings of a project
-      # TODO
-      responses: {}
-    post:
-      tags:
-        - Funding
-      summary: Create a funding
-      # TODO
-      responses: {}
-  /dmps/{dmpId}/projects/{projectId}/fundings/{fundingId}:
-    get:
-      tags:
-        - Funding
-      summary: Get a funding
-      # TODO
-      responses: {}
-    put:
-      tags:
-        - Funding
-      summary: Update a funding
-      # TODO
-      responses: {}
-    delete:
-      tags:
-        - Funding
-      summary: Delete a funding
-      # TODO
-      responses: {}
-
-  /dmps/{dmpId}/datasets/query:
+  /datasets/query:
     post:
       tags:
         - Dataset
-      summary: Query datasets of a DMP
-      # TODO
-      responses: {}
+      summary: Query datasets
+      description: >
+        Query datasets across all DMPs using filter, sort, and pagination options.
+        Returns a dataset list item with only the most important fields.
+        Requires at least viewing permissions for all DMPs.
+      # TODO: check if correct (relating to viewing permissions)
+      operationId: queryDatasets
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DatasetQueryRequest'
+      responses:
+        '200':
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetQueryResponse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: DMP not found
+        '415':
+          description: Unsupported media type
+        '500':
+          description: Internal server error
   /dmps/{dmpId}/datasets:
     post:
       tags:
         - Dataset
       summary: Create a dataset
-      # TODO
-      responses: {}
+      description:
+          Create a dataset and add it to a specified DMP.
+          Requires write permissions for the given DMP.
+      operationId: postDataset
+      parameters:
+          - name: dmpId
+            in: path
+            description: DMP ID to which the dataset will be added
+            required: true
+            schema:
+              type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Dataset'
+      responses:
+        '201':
+          description: Dataset successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dataset'
+        '400':
+          description: Malformed dataset input
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: DMP not found
+        '415':
+          description: Unsupported media type
+        '500':
+          description: Internal server error
   /dmps/{dmpId}/datasets/{datasetId}:
     get:
       tags:
         - Dataset
       summary: Get a dataset
-      # TODO
-      responses: {}
+      description: >
+        Retrieve a dataset for a specific dmp via the dataset ID.
+        Requires at least viewing permissions for the specified DMP.
+      operationId: getDataset
+      parameters:
+        - name: dmpId
+          in: path
+          description: DMP ID from which to get the dataset
+          required: true
+          schema:
+            type: string
+        - name: datasetId
+          in: path
+          description: Internal ID of the dataset to retrieve.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Dataset found and returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dataset'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+        '500':
+          description: Internal server error
     put:
       tags:
         - Dataset
       summary: Update a dataset
-      # TODO
-      responses: {}
+      description: >
+        Fully update an existing dataset belonging to the specified DMP.
+        Requires write permissions for the given DMP.
+      operationId: updateDataset
+      parameters:
+        - name: dmpId
+          in: path
+          description: ID of the DMP to which the dataset belongs
+          required: true
+          schema:
+            type: string
+        - name: datasetId
+          in: path
+          description: Internal ID of the dataset to update.
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Dataset'
+      responses:
+        '200':
+          description: Dataset successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dataset'
+        '400':
+          description: Malformed dataset input
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: DMP or dataset not found
+        '415':
+          description: Unsupported media type
+        '500':
+          description: Internal server error
     delete:
       tags:
         - Dataset
       summary: Delete a dataset
-      # TODO
-      responses: {}
-
-  /dmps/{dmpId}/datasets/{datasetId}/distributions:
-    get:
-      tags:
-        - Distribution
-      summary: List distributions of a dataset
-      # TODO
-      responses: {}
-    post:
-      tags:
-        - Distribution
-      summary: Create a distribution
-      # TODO
-      responses: {}
-  /dmps/{dmpId}/datasets/{datasetId}/distributions/{distributionId}:
-    get:
-      tags:
-        - Distribution
-      summary: Get a distribution
-      # TODO
-      responses: {}
-    put:
-      tags:
-        - Distribution
-      summary: Update a distribution
-      # TODO
-      responses: {}
-    delete:
-      tags:
-        - Distribution
-      summary: Delete a distribution
-      # TODO
-      responses: {}
-
-  /dmps/{dmpId}/datasets/{datasetId}/distributions/{distributionId}/licenses:
-    get:
-      tags:
-        - License
-      summary: List licenses of a distribution
-      # TODO
-      responses: {}
-    post:
-      tags:
-        - License
-      summary: Create a license
-      # TODO
-      responses: {}
-  /dmps/{dmpId}/datasets/{datasetId}/distributions/{distributionId}/licenses/{licenseId}:
-    get:
-      tags:
-        - License
-      summary: Get a license
-      # TODO
-      responses: {}
-    put:
-      tags:
-        - License
-      summary: Update a license
-      # TODO
-      responses: {}
-    delete:
-      tags:
-        - License
-      summary: Delete a license
-      # TODO
-      responses: {}
-
-  /dmps/{dmpId}/datasets/{datasetId}/distributions/{distributionId}/hosts:
-    get:
-      tags:
-        - Host
-      summary: List hosts of a distribution
-      # TODO
-      responses: {}
-    post:
-      tags:
-        - Host
-      summary: Create a host
-      # TODO
-      responses: {}
-  /dmps/{dmpId}/datasets/{datasetId}/distributions/{distributionId}/hosts/{hostId}:
-    get:
-      tags:
-        - Host
-      summary: Get a host
-      # TODO
-      responses: {}
-    put:
-      tags:
-        - Host
-      summary: Update a host
-      # TODO
-      responses: {}
-    delete:
-      tags:
-        - Host
-      summary: Delete a host
-      # TODO
-      responses: {}
-
-  /dmps/{dmpId}/datasets/{datasetId}/security-privacy:
-    get:
-      tags:
-        - Security and Privacy
-      summary: List security and privacy records of a dataset
-      # TODO
-      responses: {}
-    post:
-      tags:
-        - Security and Privacy
-      summary: Create a security and privacy record
-      # TODO
-      responses: {}
-  /dmps/{dmpId}/datasets/{datasetId}/security-privacy/{securityPrivacyId}:
-    get:
-      tags:
-        - Security and Privacy
-      summary: Get a security and privacy record
-      # TODO
-      responses: {}
-    put:
-      tags:
-        - Security and Privacy
-      summary: Update a security and privacy record
-      # TODO
-      responses: {}
-    delete:
-      tags:
-        - Security and Privacy
-      summary: Delete a security and privacy record
-      # TODO
-      responses: {}
-
-  /dmps/{dmpId}/datasets/{datasetId}/technical-resources:
-    get:
-      tags:
-        - Technical Resource
-      summary: List technical resources of a dataset
-      # TODO
-      responses: {}
-    post:
-      tags:
-        - Technical Resource
-      summary: Create a technical resource
-      # TODO
-      responses: {}
-  /dmps/{dmpId}/datasets/{datasetId}/technical-resources/{technicalResourceId}:
-    get:
-      tags:
-        - Technical Resource
-      summary: Get a technical resource
-      # TODO
-      responses: {}
-    put:
-      tags:
-        - Technical Resource
-      summary: Update a technical resource
-      # TODO
-      responses: {}
-    delete:
-      tags:
-        - Technical Resource
-      summary: Delete a technical resource
-      # TODO
-      responses: {}
-
-  /dmps/{dmpId}/datasets/{datasetId}/metadata:
-    get:
-      tags:
-        - Metadata
-      summary: List metadata records of a dataset
-      # TODO
-      responses: {}
-    post:
-      tags:
-        - Metadata
-      summary: Create a metadata record
-      # TODO
-      responses: {}
-  /dmps/{dmpId}/datasets/{datasetId}/metadata/{metadataId}:
-    get:
-      tags:
-        - Metadata
-      summary: Get a metadata record
-      # TODO
-      responses: {}
-    put:
-      tags:
-        - Metadata
-      summary: Update a metadata record
-      # TODO
-      responses: {}
-    delete:
-      tags:
-        - Metadata
-      summary: Delete a metadata record
-      # TODO
-      responses: {}
+      description: >
+        Delete a dataset from the specified DMP.
+      operationId: deleteDataset
+      parameters:
+        - name: dmpId
+          in: path
+          description: ID of the DMP from which the dataset will be deleted
+          required: true
+          schema:
+            type: string
+        - name: datasetId
+          in: path
+          description: Internal ID of the dataset to delete.
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Successful deletion
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: DMP or dataset not found
+        '500':
+          description: Internal server error
+#
+#  /dmps/{dmpId}/datasets/{datasetId}/distributions:
+#    get:
+#      tags:
+#        - Distribution
+#      summary: List distributions of a dataset
+#      # TODO
+#      responses: {}
+#    post:
+#      tags:
+#        - Distribution
+#      summary: Create a distribution
+#      # TODO
+#      responses: {}
+#  /dmps/{dmpId}/datasets/{datasetId}/distributions/{distributionId}:
+#    get:
+#      tags:
+#        - Distribution
+#      summary: Get a distribution
+#      # TODO
+#      responses: {}
+#    put:
+#      tags:
+#        - Distribution
+#      summary: Update a distribution
+#      # TODO
+#      responses: {}
+#    delete:
+#      tags:
+#        - Distribution
+#      summary: Delete a distribution
+#      # TODO
+#      responses: {}
+#
+#  /dmps/{dmpId}/datasets/{datasetId}/distributions/{distributionId}/licenses:
+#    get:
+#      tags:
+#        - License
+#      summary: List licenses of a distribution
+#      # TODO
+#      responses: {}
+#    post:
+#      tags:
+#        - License
+#      summary: Create a license
+#      # TODO
+#      responses: {}
+#  /dmps/{dmpId}/datasets/{datasetId}/distributions/{distributionId}/licenses/{licenseId}:
+#    get:
+#      tags:
+#        - License
+#      summary: Get a license
+#      # TODO
+#      responses: {}
+#    put:
+#      tags:
+#        - License
+#      summary: Update a license
+#      # TODO
+#      responses: {}
+#    delete:
+#      tags:
+#        - License
+#      summary: Delete a license
+#      # TODO
+#      responses: {}
+#
+#  /dmps/{dmpId}/datasets/{datasetId}/distributions/{distributionId}/hosts:
+#    get:
+#      tags:
+#        - Host
+#      summary: List hosts of a distribution
+#      # TODO
+#      responses: {}
+#    post:
+#      tags:
+#        - Host
+#      summary: Create a host
+#      # TODO
+#      responses: {}
+#  /dmps/{dmpId}/datasets/{datasetId}/distributions/{distributionId}/hosts/{hostId}:
+#    get:
+#      tags:
+#        - Host
+#      summary: Get a host
+#      # TODO
+#      responses: {}
+#    put:
+#      tags:
+#        - Host
+#      summary: Update a host
+#      # TODO
+#      responses: {}
+#    delete:
+#      tags:
+#        - Host
+#      summary: Delete a host
+#      # TODO
+#      responses: {}
+#
+#  /dmps/{dmpId}/datasets/{datasetId}/security-privacy:
+#    get:
+#      tags:
+#        - Security and Privacy
+#      summary: List security and privacy records of a dataset
+#      # TODO
+#      responses: {}
+#    post:
+#      tags:
+#        - Security and Privacy
+#      summary: Create a security and privacy record
+#      # TODO
+#      responses: {}
+#  /dmps/{dmpId}/datasets/{datasetId}/security-privacy/{securityPrivacyId}:
+#    get:
+#      tags:
+#        - Security and Privacy
+#      summary: Get a security and privacy record
+#      # TODO
+#      responses: {}
+#    put:
+#      tags:
+#        - Security and Privacy
+#      summary: Update a security and privacy record
+#      # TODO
+#      responses: {}
+#    delete:
+#      tags:
+#        - Security and Privacy
+#      summary: Delete a security and privacy record
+#      # TODO
+#      responses: {}
+#
+#  /dmps/{dmpId}/datasets/{datasetId}/technical-resources:
+#    get:
+#      tags:
+#        - Technical Resource
+#      summary: List technical resources of a dataset
+#      # TODO
+#      responses: {}
+#    post:
+#      tags:
+#        - Technical Resource
+#      summary: Create a technical resource
+#      # TODO
+#      responses: {}
+#  /dmps/{dmpId}/datasets/{datasetId}/technical-resources/{technicalResourceId}:
+#    get:
+#      tags:
+#        - Technical Resource
+#      summary: Get a technical resource
+#      # TODO
+#      responses: {}
+#    put:
+#      tags:
+#        - Technical Resource
+#      summary: Update a technical resource
+#      # TODO
+#      responses: {}
+#    delete:
+#      tags:
+#        - Technical Resource
+#      summary: Delete a technical resource
+#      # TODO
+#      responses: {}
+#
+#  /dmps/{dmpId}/datasets/{datasetId}/metadata:
+#    get:
+#      tags:
+#        - Metadata
+#      summary: List metadata records of a dataset
+#      # TODO
+#      responses: {}
+#    post:
+#      tags:
+#        - Metadata
+#      summary: Create a metadata record
+#      # TODO
+#      responses: {}
+#  /dmps/{dmpId}/datasets/{datasetId}/metadata/{metadataId}:
+#    get:
+#      tags:
+#        - Metadata
+#      summary: Get a metadata record
+#      # TODO
+#      responses: {}
+#    put:
+#      tags:
+#        - Metadata
+#      summary: Update a metadata record
+#      # TODO
+#      responses: {}
+#    delete:
+#      tags:
+#        - Metadata
+#      summary: Delete a metadata record
+#      # TODO
+#      responses: {}
 
 components:
   schemas:
@@ -608,4 +766,452 @@ components:
     DMPFull:
       type: object
       properties: {} # TODO: add properties
+    Dataset:
+      type: object
+      description: A dataset compliant with the RDA DMP Common Standard (DCS).
+      properties:
+        data_quality_assurance:
+          type: string
+          description: >
+            To describe any quality assurance processes applied to a dataset, such as, to ensure its accuracy,
+            reliability, consistency, and usability for its intended purposes. This includes systematic practices,
+            procedures, and policies designed to maintain high data quality throughout its lifecycle.
+          example: >
+            We calibrate measuring equipment daily, run repeat samples to monitor consistency
+            in measurements and results, and cross-check collected data with at least two colleagues
+            for accuracy.
+        dataset_id:
+          type: object
+          description: >
+            Description is a property in both Dataset and Distribution, in compliance with W3C DCAT.
+            In some cases these might be identical, but in most cases the Dataset represents a more abstract concept,
+            while the distribution can point to a specific file.
+          properties:
+            identifier:
+              type: string
+              description: To indicate the specific value of an identifier for a dataset.
+              example: 	https://hdl.handle.net/11353/10.923628
+            type:
+              type: string
+              enum: [handle, doi, ark, url, other]
+              description: To specify a type of an identifier for a dataset.
+              example: handle
+        description:
+          type: string
+          description: A description of the dataset.
+        distribution:
+          type: array
+          items:
+            type: object
+            description: To provide technical information on a specific instance of data.
+            properties:
+              access_url:
+                type: string
+                format: url
+                description: >
+                  A URL of the resource that gives access to a distribution of the dataset. e.g. landing page.
+              available_until:
+                type: string
+                format: date
+                description: >
+                  Indicates how long this distribution will be/ should be available.
+                  Encoded using the relevant ISO 8601 Date compliant string.
+                example: 	2030-06-30
+              byte_size:
+                type: number
+                description: Size of a distribution in bytes.
+                example: 690000
+              data_access:
+                type: string
+                description: Indicates access mode for data.
+                enum: [open, shared, closed]
+              description:
+                type: string
+                description: >
+                  Description is a property in both Dataset and Distribution, in compliance with W3C DCAT.
+                  In some cases these might be identical, but in most cases the Dataset represents a more abstract
+                  concept, while the distribution can point to a specific file.
+                example: >
+                  This dataset contains measurements from a single research location at the University of California's
+                  Arboretum in Davis, California, collected every 30 minutes over a 6-month period from January 2024
+                  until June 2024.  Each file includes time-stamped data for temperature, humidity, and soil moisture,
+                  listed by date and time. The data is organized in CSV format, with each row representing a specific
+                  time point, including the location (UC Arboretum), timestamp, and the corresponding environmental
+                  variables.
+              download_url:
+                type: string
+                format: url
+                description: The URL of the downloadable file in a given format. E.g. CSV file or RDF file.
+              format:
+                type: array
+                items:
+                  type: string
+                  description: >
+                    Format according to: https://www.iana.org/assignments/media-types/media-types.xhtml if appropriate,
+                    otherwise use the common name for this format
+                  example: image/tiff
+              host:
+                type: object
+                description: >
+                  To provide information on a system where data is stored. This can be all types of systems used
+                  within the whole data management lifecycle, i.e. temporary storage on networked hard drives,
+                  as well as, repository systems where data is shared with others.
+                properties:
+                  availability:
+                    type: string
+                    description: 	Availability of a host (preferably as a percentage).
+                    example: 99,5
+                  backup_frequency:
+                    type: string
+                    description: Frequency of backups provided by a host.
+                    example: weekly
+                  backup_type:
+                    type: string
+                    description:	Location and/or type of the backup provided by a host.
+                    example: tapes
+                  certified_with:
+                    type: string
+                    description: To indicate host trustworthiness via a standard repository certificate.
+                    enum: [din31644, dini-zertifikat, dsa, iso16363, iso16919, trac, wds, coretrustseal]
+                    example: coretrustseal
+                  description:
+                    type: string
+                    description: Description.
+                  geo_location:
+                    type: string
+                    description: >
+                      Physical location of a server (where the distribution is actually stored) expressed
+                      using ISO 3166-1 country code.
+                    example: AT
+                  pid_system:
+                    type: string
+                    description: 	PID System used by a host.
+                    enum: [ark, arxiv, bibcode, doi, eissn, handle, igsn, isbn, issn, istc, lissn, lsid, pmid, purl, upc,
+                    url, urn, other]
+                    example: doi
+                  storage_type:
+                    type: string
+                    description: To indicate whether a host supports versioning of data distributions.
+                    example: LTO-8 tape
+                  support_versioning:
+                    type: string
+                    enum: [yes, no, unknown]
+                    example: yes
+                  title:
+                    type: string
+                    description: Title
+                    example: Super Repository
+                  url:
+                    type: string
+                    format: url
+                    description: A URL of an infrastructure hosting a distribution of a dataset.
+                    example: https://zenodo.org
+              license:
+                type: array
+                description: To list all licenses applied to a specific distribution of data.
+                items:
+                  type: object
+                  properties:
+                    license_ref:
+                      type: string
+                      format: url
+                      description: Link to license document.
+                    start_date:
+                      type: string
+                      format: date
+                      description: >
+                        If date is set in the future, it indicates embargo period.
+                        Encoded using the relevant ISO 8601 Date compliant string.
+              title:
+                type: string
+                description: >
+                  Title is a property in both Dataset and Distribution, in compliance with W3C DCAT.
+                  In some cases these might be identical, but in most cases the Dataset represents a more abstract
+                  concept, while the distribution can point to a specific file.
+                example: Full resolution images
+        internal_id:
+          type: string
+          description: Internal system identifier of the dataset.
+          example: "123456789abcdefghi"
+        is_reused:
+          type: boolean
+          description: >
+            Indication if the dataset is reused, i.e., not produced in project(s) covered by this DMP.
+        issued:
+          type: string
+          format: date
+          description: >
+            To indicate a date when a dataset was published or released.
+            Encoded using the relevant ISO 8601 Date compliant string.
+          example: 2019-06-30
+        keyword:
+          type: array
+          items:
+            type: string
+          description: List of keywords as strings.
+          example: keyword 1, keyword 2
+        language:
+          type: array
+          description: ISO 639-3 language codes.
+          items:
+            type: string
+            pattern: '^[a-z]{3}$'
+          example: eng
+        metadata:
+          type: array
+          description: To describe metadata standards used.
+          items:
+            type: object
+            properties:
+              description:
+                type: string
+                description: To provide any details on the choice of the metadata standard.
+                example: >
+                  The ISO 19115 Metadata Standard is applied to describe each geospatial dataset.
+                  Metadata includes the satellite's sensor type (e.g. Landsat 8 OLI), acquisition date,
+                  spatial resolution (30m), and cloud cover percentage.
+              language:
+                type: string
+                description: Language of a metadata expressed using ISO 639-3.
+                example: eng
+              metadata_standard_id:
+                type: object
+                description: Identifier of Metadata Standard.
+                properties:
+                  identifier:
+                    type: string
+                    description: To indicate the specific value of an identifier for a metadata standard.
+                    example: http://www.dublincore.org/specifications/dublin-core/dcmi-terms/
+                  type:
+                    type: string
+                    description: To specify a type of an identifier for a metadata standard.
+                    enum: [url, other]
+        personal_data:
+          type: string
+          enum: [ yes, no, unknown ]
+          description: >
+            To indicate whether a dataset contains personal data.
+            Personal data refers to any data that can identify an individual
+            (e.g. name, birthdate, address, voice recordings, etc.).
+        preservation_statement:
+          type: string
+          description: >
+            To outline a plan for how and why a dataset will be preserved for long-term access,
+             including for example storage redundancy, integrity checks (checksums, fixity checks),
+            format migration, and a sustainability plan ensuring institutional commitment and funding.
+          example: >
+            All research data will be stored in the university's secure data repository, backed up daily to ensure
+            redundancy and prevent data loss. The dataset will be preserved in a standardized format (e.g. CSV, JSON)
+            and will include detailed metadata for clarity. It will be accessible to the public via the university’s
+            open-access platform three months after the completion of the project, with ongoing access ensured for a
+            minimum of 5 years. Regular checks will be performed every 6 months to confirm the integrity and
+            readability of the data.
+        security_and_privacy:
+          type: object
+          description: >
+            To list all security and privacy measures applied to a dataset to protect sensitive information,
+            for example encryption, anonymization, data masking, and compliance with data protection regulations
+            (e.g. GDPR or HIPAA). It can also be used to express any security measures required for handling
+            the dataset, e.g. only physical access, etc.
+        sensitive_data:
+          type: string
+          enum: [ yes, no, unknown ]
+          description: >
+            To indicate whether a dataset contains sensitive data.
+            Sensitive data refers to information that could pose risks to individuals or organizations for example
+            financial information, medical records, passwords and social security numbers.
+        technical_resource:
+          type: array
+          items:
+            type: object
+            description: >
+              List all technical resources (e.g. tools or software) required for any stage of a dataset lifecycle
+              (e.g. microscopes, sensors, Jupyter Notebook, Galaxy workflows, measuring devices)
+        title:
+          type: string
+          description: >
+            Title is a property in both Dataset and Distribution, in compliance with W3C DCAT.
+            In some cases these might be identical, but in most cases the Dataset represents a more abstract concept,
+            while the distribution can point to a specific file.
+          example: Fast car images
+        type:
+          type: string
+          description: >
+            If appropriate, type according to: DataCite and/or COAR dictionary.
+            Otherwise use the common name for the type, e.g. raw data, software, survey, etc.
+            https://schema.datacite.org/meta/kernel-4.1/doc/DataCite-MetadataKernel_v4.1.pdf
+            http://vocabularies.coar-repositories.org/pubby/resource_type.html
+          example: image
 
+    DatasetQueryRequest:
+      type: object
+      properties:
+        sort:
+          type: array
+          description: List of sort criteria
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                enum: [ title, created, modified, issued ]
+                default: created
+                description: Field to sort by. Defaults to 'created' if not provided.
+              direction:
+                type: string
+                enum: [ asc, desc ]
+                default: asc
+                description: Sort direction. Defaults to 'asc' if not provided.
+        dmp_ids:
+          type: array
+          items:
+            type: string
+        dataset_ids:
+          type: array
+          items:
+            type: string
+          description: >
+            List of dataset identifiers. May include internal IDs, alternate identifiers
+            (e.g. DOI, Handle), and related dataset identifiers.
+        title:
+          type: array
+          items:
+            type: string
+        language:
+          type: array
+          items:
+            type: string
+            description: ISO 639-3 language code.
+        issued_before:
+          type: string
+          format: date
+        issued_after:
+          type: string
+          format: date
+        metadata_standard_identifier:
+          type: array
+          items:
+            type: string
+          description: Identifiers of metadata standards used.
+        personal_data:
+          type: string
+          enum: [ yes, no, unknown ]
+        sensitive_data:
+          type: string
+          enum: [ yes, no, unknown ]
+        type:
+          type: array
+          items:
+            type: string
+        distribution:
+          type: array
+          items:
+            type: object
+            properties:
+              formats:
+                type: array
+                description: >
+                  List of formats where each format is expressed according to:
+                  https://www.iana.org/assignments/media-types/media-types.xhtml
+                  if appropriate, otherwise use the common name.
+                items:
+                  type: string
+                  example: image/tiff
+              license_urls:
+                type: array
+                description: Array of links to the respective license document.
+                items:
+                  type: string
+                  format: url
+        host_title:
+          type: array
+          items:
+            type: string
+        host_url:
+          type: array
+          items:
+            type: string
+        keyword:
+          type: array
+          items:
+            type: string
+        query:
+          type: array
+          items:
+            type: string
+        size:
+          type: integer
+          format: int32
+          description: Integer representing the page size for pagination.
+          default: 20
+          example: 20
+        offset:
+          type: integer
+          format: int32
+          description: Integer representing the results offset for pagination.
+          default: 0
+          example: 0
+
+    DatasetQueryResponse:
+      type: object
+      description: A paginated list of dataset summaries returned by a query.
+      properties:
+        total_count:
+          type: integer
+          format: int32
+          description: Total number of datasets matching the query.
+        offset:
+          type: integer
+          format: int32
+          description: Offset used in the query.
+        size:
+          type: integer
+          format: int32
+          description: Number of datasets returned.
+        datasets:
+          type: array
+          description: List of dataset summaries.
+          items:
+            type: object
+            description: A dataset summary compliant with the RDA DMP Common Standard (DCS).
+            properties:
+              dataset_id:
+                type: object
+                description: >
+                  Description is a property in both Dataset and Distribution, in compliance with W3C DCAT.
+                  In some cases these might be identical, but in most cases the Dataset represents a more abstract concept,
+                  while the distribution can point to a specific file.
+                properties:
+                  identifier:
+                    type: string
+                    format: uri
+                    description: To indicate the specific value of an identifier for a dataset
+                    example: https://hdl.handle.net/11353/10.923628
+                  type:
+                    type: string
+                    enum: [ handle, doi, ark, url, other ]
+                    description: To specify a type of an identifier for a dataset.
+                    example: handle
+              dmp_id:
+                type: object
+                description: Identifier for the DMP itself.
+                properties:
+                  identifier:
+                    type: string
+                    description: To indicate the specific value of an identifier for a DMP.
+                    example: https://doi.org/10.1371/journal.pcbi.1006750
+                  type:
+                    type: string
+                    description: To specify a type of an identifier for a DMP.
+                    enum: [ handle, doi, ark, url, other ]
+              internal_id:
+                type: string
+                description: Internal system identifier of the dataset.
+                example: "123456789abcdefghi"
+              title:
+                type: string
+                description: >
+                  Title is a property in both Dataset and Distribution, in compliance with W3C DCAT.
+                  In some cases these might be identical, but in most cases the Dataset represents a more abstract concept,
+                  while the distribution can point to a specific file.
+                example: Fast car images
