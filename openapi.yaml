@@ -356,9 +356,10 @@ paths:
       summary: Query datasets
       description: >
         Query datasets across all DMPs using filter, sort, and pagination options.
-        Returns a dataset list item with only the most important fields.
-        Requires at least viewing permissions for all DMPs.
-      # TODO: check if correct (relating to viewing permissions)
+        Returns a dataset list item with only the most important fields:
+        id of the dmp of the dataset, id of the dataset, internal id of the dataset, and title.
+        Datasets can be sorted by title, creation date, modification date,
+        issued date, and type in ascending or descending order.
       operationId: queryDatasets
       requestBody:
         required: true
@@ -389,15 +390,16 @@ paths:
     post:
       tags:
         - Dataset
-      summary: Create a dataset
+      summary: >
+        Create a dataset and add it to a specified DMP.
       description:
-          Create a dataset and add it to a specified DMP.
-          Requires write permissions for the given DMP.
+        Create a dataset in line with the RDA DMP Common Standard (DCS).
+        See https://github.com/RDA-DMP-Common/RDA-DMP-Common-Standard for more details.
       operationId: postDataset
       parameters:
           - name: dmpId
             in: path
-            description: DMP ID to which the dataset will be added
+            description: DMP to which the dataset will be added
             required: true
             schema:
               type: string
@@ -413,7 +415,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Dataset'
+                type: object
+                properties:
+                  internal_id:
+                    type: string
+                    description: Internal ID of the dataset
+                    example: "123"
+                  dataset:
+                    $ref: '#/components/schemas/Dataset'
         '400':
           description: Malformed dataset input
         '401':
@@ -433,12 +442,11 @@ paths:
       summary: Get a dataset
       description: >
         Retrieve a dataset for a specific dmp via the dataset ID.
-        Requires at least viewing permissions for the specified DMP.
       operationId: getDataset
       parameters:
         - name: dmpId
           in: path
-          description: DMP ID from which to get the dataset
+          description: Internal DMP ID from which to get the dataset
           required: true
           schema:
             type: string
@@ -474,7 +482,7 @@ paths:
       parameters:
         - name: dmpId
           in: path
-          description: ID of the DMP to which the dataset belongs
+          description: Internal ID of the DMP to which the dataset belongs
           required: true
           schema:
             type: string
@@ -519,7 +527,7 @@ paths:
       parameters:
         - name: dmpId
           in: path
-          description: ID of the DMP from which the dataset will be deleted
+          description: Internal ID of the DMP from which the dataset will be deleted
           required: true
           schema:
             type: string
@@ -768,29 +776,43 @@ components:
       properties: {} # TODO: add properties
     Dataset:
       type: object
-      description: A dataset compliant with the RDA DMP Common Standard (DCS).
+      description: >
+        A dataset compliant with the RDA DMP Common Standard (DCS).
+      required:
+        - dataset_id
+        - personal_data
+        - sensitive_data
+        - title
       properties:
         data_quality_assurance:
-          type: string
+          type: array
           description: >
+            Array where each item has this purpose:
             To describe any quality assurance processes applied to a dataset, such as, to ensure its accuracy,
             reliability, consistency, and usability for its intended purposes. This includes systematic practices,
             procedures, and policies designed to maintain high data quality throughout its lifecycle.
-          example: >
-            We calibrate measuring equipment daily, run repeat samples to monitor consistency
-            in measurements and results, and cross-check collected data with at least two colleagues
-            for accuracy.
+          items:
+            type: string
+            description: >
+              To describe any quality assurance processes applied to a dataset, such as, to ensure its accuracy,
+              reliability, consistency, and usability for its intended purposes. This includes systematic practices,
+              procedures, and policies designed to maintain high data quality throughout its lifecycle.
+            example: >
+              We calibrate measuring equipment daily, run repeat samples to monitor consistency
+              in measurements and results, and cross-check collected data with at least two colleagues
+              for accuracy.
         dataset_id:
           type: object
           description: >
-            Description is a property in both Dataset and Distribution, in compliance with W3C DCAT.
-            In some cases these might be identical, but in most cases the Dataset represents a more abstract concept,
-            while the distribution can point to a specific file.
+            Identifier for a dataset.
+          required:
+            - identifier
+            - type
           properties:
             identifier:
               type: string
               description: To indicate the specific value of an identifier for a dataset.
-              example: 	https://hdl.handle.net/11353/10.923628
+              example: https://hdl.handle.net/11353/10.923628
             type:
               type: string
               enum: [handle, doi, ark, url, other]
@@ -799,11 +821,19 @@ components:
         description:
           type: string
           description: A description of the dataset.
+          example: >
+            The dataset includes detailed measurements of temperature, humidity, and soil moisture levels
+            collected at various time intervals (every 30 minutes) across multiple locations.
+            The dataset will also include metadata such as GPS coordinates,
+            sensor calibration data, and environmental conditions.
+            The primary objective of this dataset is to analyze the correlation between these
+            variables and their impact on plant growth patterns over a 6-month period.
         distribution:
-          type: array
-          items:
             type: object
             description: To provide technical information on a specific instance of data.
+            required:
+              - data_access
+              - title
             properties:
               access_url:
                 type: string
@@ -816,7 +846,7 @@ components:
                 description: >
                   Indicates how long this distribution will be/ should be available.
                   Encoded using the relevant ISO 8601 Date compliant string.
-                example: 	2030-06-30
+                example: 2030-06-30
               byte_size:
                 type: number
                 description: Size of a distribution in bytes.
@@ -828,9 +858,7 @@ components:
               description:
                 type: string
                 description: >
-                  Description is a property in both Dataset and Distribution, in compliance with W3C DCAT.
-                  In some cases these might be identical, but in most cases the Dataset represents a more abstract
-                  concept, while the distribution can point to a specific file.
+                  Description of the distribution.
                 example: >
                   This dataset contains measurements from a single research location at the University of California's
                   Arboretum in Davis, California, collected every 30 minutes over a 6-month period from January 2024
@@ -844,11 +872,14 @@ components:
                 description: The URL of the downloadable file in a given format. E.g. CSV file or RDF file.
               format:
                 type: array
+                description: >
+                  List of formats according to: https://www.iana.org/assignments/media-types/media-types.xhtml if appropriate,
+                  otherwise use the common name for this format.
                 items:
                   type: string
                   description: >
                     Format according to: https://www.iana.org/assignments/media-types/media-types.xhtml if appropriate,
-                    otherwise use the common name for this format
+                    otherwise use the common name for this format.
                   example: image/tiff
               host:
                 type: object
@@ -856,10 +887,13 @@ components:
                   To provide information on a system where data is stored. This can be all types of systems used
                   within the whole data management lifecycle, i.e. temporary storage on networked hard drives,
                   as well as, repository systems where data is shared with others.
+                required:
+                  - title
+                  - url
                 properties:
                   availability:
                     type: string
-                    description: 	Availability of a host (preferably as a percentage).
+                    description: Availability of a host (preferably as a percentage).
                     example: 99,5
                   backup_frequency:
                     type: string
@@ -867,7 +901,7 @@ components:
                     example: weekly
                   backup_type:
                     type: string
-                    description:	Location and/or type of the backup provided by a host.
+                    description: Location and/or type of the backup provided by a host.
                     example: tapes
                   certified_with:
                     type: string
@@ -884,11 +918,14 @@ components:
                       using ISO 3166-1 country code.
                     example: AT
                   pid_system:
-                    type: string
-                    description: 	PID System used by a host.
-                    enum: [ark, arxiv, bibcode, doi, eissn, handle, igsn, isbn, issn, istc, lissn, lsid, pmid, purl, upc,
-                    url, urn, other]
-                    example: doi
+                    type: array
+                    description: PID System used by a host.
+                    items:
+                      type: string
+                      description: PID System used by a host.
+                      enum: [ark, arxiv, bibcode, doi, eissn, handle, igsn, isbn, issn, istc, lissn, lsid, pmid, purl, upc,
+                      url, urn, other]
+                      example: doi
                   storage_type:
                     type: string
                     description: To indicate whether a host supports versioning of data distributions.
@@ -911,6 +948,9 @@ components:
                 description: To list all licenses applied to a specific distribution of data.
                 items:
                   type: object
+                  required:
+                    - license_ref
+                    - start_date
                   properties:
                     license_ref:
                       type: string
@@ -925,14 +965,8 @@ components:
               title:
                 type: string
                 description: >
-                  Title is a property in both Dataset and Distribution, in compliance with W3C DCAT.
-                  In some cases these might be identical, but in most cases the Dataset represents a more abstract
-                  concept, while the distribution can point to a specific file.
+                  Title of the distribution.
                 example: Full resolution images
-        internal_id:
-          type: string
-          description: Internal system identifier of the dataset.
-          example: "123456789abcdefghi"
         is_reused:
           type: boolean
           description: >
@@ -951,17 +985,18 @@ components:
           description: List of keywords as strings.
           example: keyword 1, keyword 2
         language:
-          type: array
-          description: ISO 639-3 language codes.
-          items:
-            type: string
-            pattern: '^[a-z]{3}$'
+          type: string
+          pattern: '^[a-z]{3}$'
+          description: ISO 639-3 language code.
           example: eng
         metadata:
           type: array
           description: To describe metadata standards used.
           items:
             type: object
+            required:
+              - language
+              - metadata_standard_id
             properties:
               description:
                 type: string
@@ -972,11 +1007,15 @@ components:
                   spatial resolution (30m), and cloud cover percentage.
               language:
                 type: string
+                pattern: '^[a-z]{3}$'
                 description: Language of a metadata expressed using ISO 639-3.
                 example: eng
               metadata_standard_id:
                 type: object
                 description: Identifier of Metadata Standard.
+                required:
+                  - identifier
+                  - type
                 properties:
                   identifier:
                     type: string
@@ -1006,13 +1045,6 @@ components:
             open-access platform three months after the completion of the project, with ongoing access ensured for a
             minimum of 5 years. Regular checks will be performed every 6 months to confirm the integrity and
             readability of the data.
-        security_and_privacy:
-          type: object
-          description: >
-            To list all security and privacy measures applied to a dataset to protect sensitive information,
-            for example encryption, anonymization, data masking, and compliance with data protection regulations
-            (e.g. GDPR or HIPAA). It can also be used to express any security measures required for handling
-            the dataset, e.g. only physical access, etc.
         sensitive_data:
           type: string
           enum: [ yes, no, unknown ]
@@ -1022,17 +1054,64 @@ components:
             financial information, medical records, passwords and social security numbers.
         technical_resource:
           type: array
+          description: >
+            List all technical resources (e.g. tools or software) required for any stage of a dataset lifecycle
+            (e.g. microscopes, sensors, Jupyter Notebook, Galaxy workflows, measuring devices).
           items:
             type: object
             description: >
-              List all technical resources (e.g. tools or software) required for any stage of a dataset lifecycle
-              (e.g. microscopes, sensors, Jupyter Notebook, Galaxy workflows, measuring devices)
+              Technical resource (e.g. tool or software) required for any stage of a dataset lifecycle
+              (e.g. microscopes, sensors, Jupyter Notebook, Galaxy workflows, measuring devices).
+            required:
+              - name
+            properties:
+              description:
+                type: string
+                description: >
+                  Describe a technical resource (e.g. tools or software) required for any stage of a dataset lifecycle
+                  (e.g. microscopes, sensors, Jupyter Notebook, Galaxy workflows, measuring devices)
+                example: >
+                  The Celestron 44102 Inverted Biological Microscope was used to examine biological samples,
+                  such as cells and microorganisms, with high-resolution optics.
+              name:
+                type: string
+                description: >
+                  Name a resource applied to a dataset
+                example: Celestron Microscope
+        security_and_privacy:
+          type: array
+          description: >
+            To list all security and privacy measures applied to a dataset to protect sensitive information,
+            for example encryption, anonymization, data masking, and compliance with data protection regulations
+            (e.g. GDPR or HIPAA). It can also be used to express any security measures required for handling the
+            dataset, e.g. only physical access, etc.
+          items:
+            type: object
+            description: >
+              Security or privacy measures applied to a dataset to protect sensitive information,
+              for example encryption, anonymization, data masking, and compliance with data protection regulations
+              (e.g. GDPR or HIPAA). It can also be used to express any security measures required for handling the
+              dataset, e.g. only physical access, etc.
+            required:
+              - title
+            properties:
+              description:
+                type: string
+                description: >
+                  Describe a security and privacy measure applied to a dataset to protect sensitive information
+                example: >
+                  The dataset undergoes anonymization by applying data masking techniques. Names, addresses,
+                  and phone numbers are replaced with pseudonyms or randomly generated identifiers. Specific details,
+                  such as exact birthdates, are generalized into age ranges.
+              title:
+                type: string
+                description: Title a measure applied to a dataset
+                example: Anonymization of Personally Identifiable Data
+
         title:
           type: string
           description: >
-            Title is a property in both Dataset and Distribution, in compliance with W3C DCAT.
-            In some cases these might be identical, but in most cases the Dataset represents a more abstract concept,
-            while the distribution can point to a specific file.
+            Title of the dataset.
           example: Fast car images
         type:
           type: string
@@ -1046,7 +1125,7 @@ components:
     DatasetQueryRequest:
       type: object
       properties:
-        sort:
+        sort_by:
           type: array
           description: List of sort criteria
           items:
@@ -1054,9 +1133,10 @@ components:
             properties:
               field:
                 type: string
-                enum: [ title, created, modified, issued ]
+                enum: [ title, created, modified, issued, type ]
                 default: created
-                description: Field to sort by. Defaults to 'created' if not provided.
+                description: >
+                  Field to sort by. Defaults to 'created' if not provided.
               direction:
                 type: string
                 enum: [ asc, desc ]
@@ -1064,6 +1144,7 @@ components:
                 description: Sort direction. Defaults to 'asc' if not provided.
         dmp_ids:
           type: array
+          description: IDs of the dmps used for the query request.
           items:
             type: string
         dataset_ids:
@@ -1071,22 +1152,21 @@ components:
           items:
             type: string
           description: >
-            List of dataset identifiers. May include internal IDs, alternate identifiers
-            (e.g. DOI, Handle), and related dataset identifiers.
-        title:
-          type: array
-          items:
-            type: string
+            List of dataset identifiers. May include standard dataset identifiers,
+            alternate identifiers (e.g. DOI, Handle), and related dataset identifiers.
         language:
           type: array
+          description: Only languages encoded in ISO 639-3 are allowed.
           items:
             type: string
             description: ISO 639-3 language code.
         issued_before:
           type: string
+          description:  ISO 8601 Date string. (inclusive)
           format: date
         issued_after:
           type: string
+          description:  ISO 8601 Date string. (inclusive)
           format: date
         metadata_standard_identifier:
           type: array
@@ -1094,51 +1174,226 @@ components:
             type: string
           description: Identifiers of metadata standards used.
         personal_data:
-          type: string
-          enum: [ yes, no, unknown ]
+          type: array
+          description: >
+            To indicate whether a dataset contains personal data.
+            Personal data refers to any data that can identify an individual
+            (e.g. name, birthdate, address, voice recordings, etc.).
+          items:
+            type: string
+            enum: [ yes, no, unknown ]
         sensitive_data:
-          type: string
-          enum: [ yes, no, unknown ]
+          type: array
+          description: >
+            To indicate whether a dataset contains sensitive data.
+            Sensitive data refers to information that could pose risks to individuals or organizations for example
+            financial information, medical records, passwords and social security numbers.
+          items:
+            type: string
+            enum: [ yes, no, unknown ]
         type:
           type: array
+          description: >
+            List of types of datasets.
+            If appropriate, type according to: DataCite and/or COAR dictionary.
+            Otherwise use the common name for the type, e.g. raw data, software, survey, etc.
           items:
             type: string
+            description: >
+              If appropriate, type according to: DataCite and/or COAR dictionary.
+              Otherwise use the common name for the type, e.g. raw data, software, survey, etc.
         distribution:
-          type: array
-          items:
-            type: object
-            properties:
-              formats:
-                type: array
+          type: object
+          description: To provide technical information on a specific instance of data.
+          properties:
+            access_url:
+              type: array
+              description: >
+                URLs of the resource that gives access to a distribution of the dataset. e.g. landing page.
+              items:
+                type: string
+                format: url
                 description: >
-                  List of formats where each format is expressed according to:
-                  https://www.iana.org/assignments/media-types/media-types.xhtml
-                  if appropriate, otherwise use the common name.
-                items:
-                  type: string
-                  example: image/tiff
-              license_urls:
-                type: array
-                description: Array of links to the respective license document.
-                items:
-                  type: string
-                  format: url
-        host_title:
-          type: array
-          items:
-            type: string
-        host_url:
-          type: array
-          items:
-            type: string
+                  A URL of the resource that gives access to a distribution of the dataset. e.g. landing page.
+            available_until:
+              type: string
+              format: date
+              description: >
+                Indicates how long the distributions will be/ should be available.
+                Encoded using the relevant ISO 8601 Date compliant string.
+              example: 2030-06-30
+            byte_size:
+              type: array
+              description: Sizes of the distributions in bytes.
+              items:
+                type: number
+                description: Size of a distribution in bytes.
+                example: 690000
+            data_access:
+              type: array
+              description: Indicates access mode for data.
+              items:
+                type: string
+                description: Indicates access mode for data. Either open, shared or closed.
+                enum: [ open, shared, closed ]
+            description:
+              type: array
+              description: Descriptions of the distributions.
+              items:
+                type: string
+                description: >
+                  Description for a distribution.
+                example: >
+                  This dataset contains measurements from a single research location at the University of California's
+                  Arboretum in Davis, California, collected every 30 minutes over a 6-month period from January 2024
+                  until June 2024.  Each file includes time-stamped data for temperature, humidity, and soil moisture,
+                  listed by date and time. The data is organized in CSV format, with each row representing a specific
+                  time point, including the location (UC Arboretum), timestamp, and the corresponding environmental
+                  variables.
+            download_url:
+              type: array
+              description: URLS of the downloadable files in a given format.
+              items:
+                type: string
+                format: url
+                description: The URL of the downloadable file in a given format. E.g. CSV file or RDF file.
+            format:
+              type: array
+              description: >
+                Formats according to: https://www.iana.org/assignments/media-types/media-types.xhtml
+              items:
+                type: string
+                description: >
+                  Format according to: https://www.iana.org/assignments/media-types/media-types.xhtml if appropriate,
+                  otherwise use the common name for this format
+                example: image/tiff
+            host:
+              type: object
+              description: >
+                To provide information on a system where data is stored. This can be all types of systems used
+                within the whole data management lifecycle, i.e. temporary storage on networked hard drives,
+                as well as, repository systems where data is shared with others.
+              properties:
+                availability:
+                  type: array
+                  description: List of availabilities of hosts (preferably as percentages).
+                  items:
+                    type: string
+                    description: Availability of a host (preferably as a percentage).
+                    example: 99,5
+                backup_frequency:
+                  type: array
+                  description: Frequencies of backups provided by hosts.
+                  items:
+                    type: string
+                    description: Frequency of backups provided by a host.
+                    example: weekly
+                backup_type:
+                  type: array
+                  description: Locations and/or types of the backup provided by hosts.
+                  items:
+                    type: string
+                    description: Location and/or type of the backup provided by a host.
+                    example: tapes
+                certified_with:
+                  type: array
+                  description: List where the items indicate host trustworthiness.
+                  items:
+                    type: string
+                    description: To indicate host trustworthiness via a standard repository certificate.
+                    enum: [ din31644, dini-zertifikat, dsa, iso16363, iso16919, trac, wds, coretrustseal ]
+                    example: coretrustseal
+                description:
+                  type: array
+                  description: List of descriptions.
+                  items:
+                    type: string
+                    description: Description.
+                geo_location:
+                  type: array
+                  items:
+                    type: string
+                    description: >
+                      Physical location of a server (where the distribution is actually stored) expressed
+                      using ISO 3166-1 country code.
+                    example: AT
+                pid_system:
+                  type: array
+                  description: PID System used by a host.
+                  items:
+                    type: string
+                    description: PID System used by a host.
+                    enum: [ ark, arxiv, bibcode, doi, eissn, handle, igsn, isbn, issn, istc, lissn, lsid, pmid, purl, upc,
+                            url, urn, other ]
+                    example: doi
+                storage_type:
+                  type: array
+                  description: List where the items indicate whether a host supports versioning of data distributions.
+                  items:
+                    type: string
+                    description: To indicate whether a host supports versioning of data distributions.
+                    example: LTO-8 tape
+                support_versioning:
+                  type: array
+                  description: List where the items indicate if the host supports versioning.
+                  items:
+                    type: string
+                    enum: [ yes, no, unknown ]
+                    example: yes
+                title:
+                  type: array
+                  description: List of titles.
+                  items:
+                    type: string
+                    description: Title
+                    example: Super Repository
+                url:
+                  type: array
+                  description: List of URLs.
+                  items:
+                    type: string
+                    format: url
+                    description: A URL of an infrastructure hosting a distribution of a dataset.
+                    example: https://zenodo.org
+            license:
+              type: array
+              description: To list all licenses applied to a specific distribution of data.
+              items:
+                type: object
+                properties:
+                  license_ref:
+                    type: string
+                    format: url
+                    description: Link to license document.
+                  start_date:
+                    type: string
+                    format: date
+                    description: >
+                      If date is set in the future, it indicates embargo period.
+                      Encoded using the relevant ISO 8601 Date compliant string.
+            title:
+              type: array
+              description: Titles of the distributions
+              items:
+                type: string
+                description: >
+                  Title of the distribution.
+                example: Full resolution images
         keyword:
           type: array
           items:
             type: string
         query:
           type: array
+          description: >
+            String.
+            Free-text or full-text search term to match against relevant DMP fields such
+            as title, description, etc..
           items:
             type: string
+            description: >
+              Free-text or full-text search term to match against relevant dataset
+              fields (title, description, etc.)
         size:
           type: integer
           format: int32
@@ -1167,30 +1422,30 @@ components:
         size:
           type: integer
           format: int32
-          description: Number of datasets returned.
+          description: Number of datasets summaries returned.
         datasets:
           type: array
           description: List of dataset summaries.
           items:
             type: object
-            description: A dataset summary compliant with the RDA DMP Common Standard (DCS).
+            description: >
+              A dataset summary with an ID for the (summarized) dataset, an ID for the DMP,
+              an internal ID for the (summarized) dataset, and a title.
             properties:
               dataset_id:
                 type: object
                 description: >
-                  Description is a property in both Dataset and Distribution, in compliance with W3C DCAT.
-                  In some cases these might be identical, but in most cases the Dataset represents a more abstract concept,
-                  while the distribution can point to a specific file.
+                  Identifier of that particular (summarized) dataset.
                 properties:
                   identifier:
                     type: string
                     format: uri
-                    description: To indicate the specific value of an identifier for a dataset
+                    description: Identifier of the (summarized) dataset.
                     example: https://hdl.handle.net/11353/10.923628
                   type:
                     type: string
                     enum: [ handle, doi, ark, url, other ]
-                    description: To specify a type of an identifier for a dataset.
+                    description: Type of the identifier for a (summarized) dataset.
                     example: handle
               dmp_id:
                 type: object
@@ -1198,20 +1453,18 @@ components:
                 properties:
                   identifier:
                     type: string
-                    description: To indicate the specific value of an identifier for a DMP.
+                    description: Identifier for a DMP.
                     example: https://doi.org/10.1371/journal.pcbi.1006750
                   type:
                     type: string
-                    description: To specify a type of an identifier for a DMP.
+                    description: Type of the DMP.
                     enum: [ handle, doi, ark, url, other ]
               internal_id:
                 type: string
-                description: Internal system identifier of the dataset.
+                description: Internal system identifier of the (summarized) dataset.
                 example: "123456789abcdefghi"
               title:
                 type: string
                 description: >
-                  Title is a property in both Dataset and Distribution, in compliance with W3C DCAT.
-                  In some cases these might be identical, but in most cases the Dataset represents a more abstract concept,
-                  while the distribution can point to a specific file.
+                  Title of the (summarized) dataset.
                 example: Fast car images
