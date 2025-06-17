@@ -1,0 +1,978 @@
+# Note: this document is written for OpenAPI 3.1, which allows us to include the DMP JSON schema. However,
+# since this specification is fairly new (2023), it is likely that most code generators will not support this
+# version and this should be backported to 3.0 later.
+openapi: 3.1.4
+info:
+  title: Common Machine-Actionable DMP API
+  description: |
+    This API provides access to Data Management Plans in a machine-readable format. You can use this API to perform
+    automated analysis or other integration. Please note that this API may not give you all information stored in the
+    system implementing it as this standard is intended as a common baseline among multiple DMP platform vendors.
+
+    When using this API, please note the If-Unmodified-Since and If-Match headers. These headers are essential for
+    avoiding race conditions when modifying DMPs.
+  version: 1.2.0-alpha1
+  license:
+    name: Creative Commons Zero v1.0 Universal
+    identifier: "CC0-1.0"
+externalDocs:
+  description: RDA DMP Common Standards WG
+  url: https://github.com/RDA-DMP-Common
+paths:
+  /dmps:
+    # This has been changed from POST to GET as this would violate the HTTP protocol and will cause problems with
+    # caching when used for unauthenticated users. Given that this is likely the most expensive request of the entire
+    # API and AI scrapers are causing an ever-increasing problem, caching is paramount for systems wanting to publicly
+    # make available their data.
+    # See: https://www.rfc-editor.org/rfc/rfc2616#section-9.5
+    #
+    # Note on query string length: the 414 error code was originally introduced in 1999. The more modern
+    # https://www.rfc-editor.org/rfc/rfc9110#section-4.1-5 specifies that HTTP implementations should support at least
+    # 8k bytes in the URL, which should be sufficient for any reasonable query. Queries that are larger than 8 kB will
+    # likely cause the database query resulting from this request to be prohibitively expensive and should not
+    # be allowed anyway.
+    get:
+      summary: List/search DMPs
+      description: |
+        This endpoint lists all DMPs or allows for creating a filtered list. When filters are provided,
+        all filter are applied (AND relationship). For filters supporting lists, the individual values are applied
+        as an OR relationship.
+
+        For items accepting more than one value you may pass multiple values by repeating the parameter in the
+        query string for each item.
+      operationId: listDMPs
+      parameters:
+        # Note: we introduce array queries here. In practice, these work by adding the parameter multiple times:
+        # ?languages[]=eng&languages[]=ger...
+        # Adding the same parameter multiple times to a query string is valid and supported by all modern web
+        # frameworks. The square brackets help languages and frameworks identify that this is intended as an
+        # array and will be converted as such. Other frameworks provide the query string as a multivalue-map
+        # (practically a map of array), so the multiple values can be extracted too.
+
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+            description: Offset to start listing from.
+        - name: count
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Number of items to fetch.
+        - name: sort_fields[]
+          description: |
+            A list of fields to sort by, in conjunction with sort_direction. Each item should be paired with the
+            corresponding item in sort_direction and sort accordingly. If sort_direction does not contain enough items,
+            the server implementation MAY return a HTTP 400 response or use the last item in the sort_directions list.
+          in: query
+          required: false
+          schema:
+            type: array
+            default: ["created"]
+            items:
+              type: string
+              default: created
+              enum:
+                - title
+                - created
+                - modified
+                - language
+                - embargo
+                - keyword
+        - name: sort_directions[]
+          in: query
+          schema:
+            type: array
+            default: ["asc"]
+            items:
+              type: string
+              default: "asc"
+              enum:
+                - "asc"
+                - "desc"
+        - name: created_before
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: created_after
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: modified_before
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: modified_after
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: languages[]
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/LanguageID"
+        - name: contact_ids[]
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/ContactID"
+        - name: contributor_ids[]
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/ContributorID"
+        - name: dataset_ids[]
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/DatasetID"
+        - name: metadata_standard_ids[]
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/MetadataStandardID"
+        - name: dmp_ids[]
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/DMPID"
+        - name: funder_ids[]
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/FunderID"
+        - name: grant_ids[]
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/GrantID"
+        - name: query
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: ethical_issues_exist
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: embargo_before
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: embargo_after
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          description: "A list of DMPs"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DMPListResponse"
+        400:
+          description: Invalid query parameters passed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidQueryStringResponse"
+        401:
+          description: Authentication required to access this API
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationRequiredResponse"
+        default:
+          description: The request failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericErrorResponse"
+    post:
+      summary: Create a DMP
+      description: |
+        Create or import a DMP from a JSON-formed DMP object. The implementation may opt to allow the creation of
+        draft DMPs with formally valid, but incomplete fields. Alternatively, the implementation may reject incomplete
+        DMPs if it cannot store them.
+      operationId: createDMP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DMP"
+      responses:
+        201:
+          description: DMP successfully created
+          content:
+            application/json:
+              schema:
+                # Note: this response has been changed from the original document as returning a simple English-language
+                # string doesn't provide the called with the assigned ID. We may opt to not return the full object but
+                # rather only the ID, possibly in conjunction with the location header.
+                $ref: "#/components/schemas/DMPWithID"
+        400:
+          description: Invalid DMP
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DMPInvalidResponse"
+        401:
+          description: Authentication required to create a DMP
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationRequiredResponse"
+        403:
+          description: Insufficient permissions to create a DMP
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsufficientPermissionsResponse"
+        409:
+          description: |
+            The DMP system has identified that this DMP already exists based on its dmp_id.
+            Security note: If the implementation chooses to return a 404 instead of a 403 on fetching DMPs, the system
+            should also ensure that users are not able to enumerate DMPs by attempting to create them and looking for
+            the 409 response code.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DMPAlreadyExistsResponse"
+        default:
+          description: The request failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericErrorResponse"
+  /dmps/{id}:
+    get:
+      summary: Get a DMP
+      description: |
+        Fetch a DMP based on its ID.
+      operationId: getDMP
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/DMPID"
+      responses:
+        200:
+          description: DMP retrieved
+          headers:
+            Last-Modified:
+              description: |
+                The server should expose the time the DMP was last modified to allow for a conditional PUT request.
+                This is especially important if the server does not support PATCH requests.
+              schema:
+                type: string
+                format: date-time
+            ETag:
+              description: |
+                The server should compute a hash of the DMP so that clients may submit conditional PUT requests and
+                avoid conflicts. This is especially important if the server does not support PATCH requests.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DMPWithID"
+        401:
+          description: |
+            Authentication required to get the specified DMP. The implementation may choose between returning this error
+            code for all DMP requests if the API isn't available without authentication, or it may return this error
+            code for non-public DMPs. Alternatively, other DMPs are available without authentication, the implementation
+            may opt to return a 404 instead to prevent information leaks about the existence of a DMP. This may
+            especially be important if the DMP tool uses numeric IDs to avoid enabling an enumeration of possible DMP
+            IDs.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationRequiredResponse"
+        403:
+          description: |
+            Insufficient permissions to get the specified a DMP.
+            Note: the implementation may opt to return a 404 instead to avoid leaking information about the
+            existence of a DMP with the specified ID. This may especially be important if the DMP tool uses numeric IDs
+            to avoid enabling an enumeration of possible DMP IDs.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsufficientPermissionsResponse"
+        404:
+          # Note: while not RFC conformant, returning a 404 instead of a 403 for individual objects is quite wide-spread
+          # in the industry. See for example the GitHub API.
+          description: |
+            DMP not found or not enough permissions to fetch the specified DMP.
+            Security note: implementations may return this error code even if the DMP exists but the authenticated user
+            has no permissions to view it in order to avoid leaking information about the existence of a DMP. This may
+            especially be important if the DMP tool uses numeric IDs to avoid enabling an enumeration of possible DMP
+            IDs.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DMPNotFoundResponse"
+        default:
+          description: The request failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericErrorResponse"
+    put:
+      operationId: putDMP
+      summary: Overwrite a DMP
+      description: |
+        Completely overwrite a DMP with the specified data. The server MUST honor the If-Unmodified-Since and IF-Match
+        headers if present.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/DMPID"
+        - name: If-Unmodified-Since
+          in: header
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: If-Match
+          in: header
+          required: false
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DMP"
+      responses:
+        200:
+          description: DMP modified
+          headers:
+            Last-Modified:
+              description: |
+                The server should expose the time the DMP was last modified to allow for a conditional PUT request.
+                This is especially important if the server does not support PATCH requests.
+              schema:
+                type: string
+                format: date-time
+            ETag:
+              description: |
+                The server should compute a hash of the DMP so that clients may submit conditional PUT requests and
+                avoid conflicts. This is especially important if the server does not support PATCH requests.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DMPWithID"
+        400:
+          description: Invalid DMP
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DMPInvalidResponse"
+        401:
+          description: |
+            Authentication required to modify the DMP. The implementation should always return this error code for
+            unauthenticated users as deletion always requires authentication.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationRequiredResponse"
+        403:
+          description: |
+            Insufficient permissions to modify the specified a DMP.
+            Note: the implementation may opt to return a 404 instead to avoid leaking information about the
+            existence of a DMP with the specified ID if the user has no permissions to at least view this DMP. The
+            implementation SHOULD return this error code if the user has at least read permissions for this DMP.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsufficientPermissionsResponse"
+        404:
+          # Note: while not RFC conformant, returning a 404 instead of a 403 for individual objects is quite wide-spread
+          # in the industry. See for example the GitHub API.
+          description: |
+            DMP not found or not enough permissions to modify the specified DMP.
+            Security note: implementations may return this error code even if the DMP exists but the authenticated user
+            has no permissions to view it in order to avoid leaking information about the existence of a DMP. The
+            implementation SHOULD NOT return this error code if the user has at least read permissions for the
+            specified DMP.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DMPNotFoundResponse"
+        409:
+          description: |
+            A precondition specified in the If-Unmodified-Since or If-Match header cannot be
+            fulfilled. The client should apply the modifications again and resubmit the request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictResponse"
+        default:
+          description: The request failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericErrorResponse"
+    patch:
+      operationId: patchDMP
+      summary: Partially update a DMP
+      description: |
+        Partially update a DMP by specifying the fields that should be updated using the JSON patch (RFC 6902) method.
+        This endpoint is OPTIONAL. If a 405 Method Not Allowed response is returned, the client should retry the request
+        by submitting a PUT request to update the full DMP.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/DMPID"
+        - name: If-Unmodified-Since
+          in: header
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: If-Match
+          in: header
+          required: false
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/JSONPatchOperation"
+      responses:
+        200:
+          description: The DMP was updated
+          headers:
+            Last-Modified:
+              description: |
+                The server should expose the time the DMP was last modified to allow for a conditional PUT request.
+                This is especially important if the server does not support PATCH requests.
+              schema:
+                type: string
+                format: date-time
+            ETag:
+              description: |
+                The server should compute a hash of the DMP so that clients may submit conditional PUT requests and
+                avoid conflicts. This is especially important if the server does not support PATCH requests.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DMPWithID"
+        400:
+          description: Invalid DMP after applying the patch.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DMPInvalidResponse"
+        401:
+          description: |
+            Authentication required to modify the DMP. The implementation should always return this error code for
+            unauthenticated users as deletion always requires authentication.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationRequiredResponse"
+        403:
+          description: |
+            Insufficient permissions to modify the specified a DMP.
+            Note: the implementation may opt to return a 404 instead to avoid leaking information about the
+            existence of a DMP with the specified ID if the user has no permissions to at least view this DMP. The
+            implementation SHOULD return this error code if the user has at least read permissions for this DMP.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsufficientPermissionsResponse"
+        404:
+          # Note: while not RFC conformant, returning a 404 instead of a 403 for individual objects is quite wide-spread
+          # in the industry. See for example the GitHub API.
+          description: |
+            DMP not found or not enough permissions to modify the specified DMP.
+            Security note: implementations may return this error code even if the DMP exists but the authenticated user
+            has no permissions to view it in order to avoid leaking information about the existence of a DMP. The
+            implementation SHOULD NOT return this error code if the user has at least read permissions for the
+            specified DMP.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DMPNotFoundResponse"
+        405:
+          description: The server does not support partial DMP updates. Retry the request with the PUT method.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatchNotSupportedResponse"
+        409:
+          description: |
+            The server could not apply the patch because a JSON Patch test failed. The server should NOT return
+            this error if the DMP itself failed validation after the apply.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictResponse"
+        default:
+          description: The request failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericErrorResponse"
+    delete:
+      operationId: deleteDMP
+      summary: Delete a DMP
+      description: Delete a DMP based on its ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/DMPID"
+      responses:
+        204:
+          description: DMP deleted
+        401:
+          description: |
+            Authentication required to delete the DMP. The implementation should always return this error code for
+            unauthenticated users as deletion always requires authentication.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationRequiredResponse"
+        403:
+          description: |
+            Insufficient permissions to delete the specified a DMP.
+            Note: the implementation may opt to return a 404 instead to avoid leaking information about the
+            existence of a DMP with the specified ID if the user has no permissions to at least view this DMP. The
+            implementation SHOULD return this error code if the user has at least read permissions for this DMP.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsufficientPermissionsResponse"
+        404:
+          # Note: while not RFC conformant, returning a 404 instead of a 403 for individual objects is quite wide-spread
+          # in the industry. See for example the GitHub API.
+          description: |
+            DMP not found or not enough permissions to delete the specified DMP.
+            Security note: implementations may return this error code even if the DMP exists but the authenticated user
+            has no permissions to view it in order to avoid leaking information about the existence of a DMP. This may
+            especially be important if the DMP tool uses numeric IDs to avoid enabling an enumeration of possible DMP
+            IDs.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DMPNotFoundResponse"
+        409:
+          description: |
+            A precondition specified in the If-Unmodified-Since or If-Match header cannot be
+            fulfilled. The client should apply the modifications again and resubmit the request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictResponse"
+        default:
+          description: The request failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericErrorResponse"
+components:
+  schemas:
+    #region IDs
+
+    # TODO: most of these IDs cannot be cleanly mapped to the common DMP schema. The reason behind this is that the
+    #       common schema doesn't expose the system-internal identifiers, but rather references OCID, ISNI, etc IDs. An
+    #       implementation using these IDs would need to "guess" which ID type is meant. Either the common schema or
+    #       this API need to be updated to make the implementation less of a guesswork. Once that's done, these types
+    #       can be replaced with references to the common schema.
+    ContributorID:
+      type: string
+      minimum: 1
+    ContactID:
+      type: string
+      minimum: 1
+    DatasetID:
+      type: string
+      minimum: 1
+    DMPID:
+      type: string
+      minimum: 1
+    FunderID:
+      type: string
+      minimum: 1
+    GrantID:
+      type: string
+      minimum: 1
+    LanguageID:
+      description: ISO 639-2 language code
+      type: string
+      enum: [
+        "aar", "abk", "ace", "ach", "ada", "ady", "afa", "afh", "afr", "ain", "aka", "akk", "ale", "alg", "alt",
+        "amh", "ang", "anp", "apa", "ara", "arc", "arg", "arn", "arp", "art", "arw", "asm", "ast", "ath", "aus",
+        "ava", "ave", "awa", "aym", "aze", "bad", "bai", "bak", "bal", "bam", "ban", "bas", "bat", "bej", "bel",
+        "bem", "ben", "ber", "bho", "bih", "bik", "bin", "bis", "bla", "bnt", "bod", "tib", "bos", "bra", "bre",
+        "btk", "bua", "bug", "bul", "byn", "cad", "cai", "car", "cat", "cau", "ceb", "cel", "ces", "cze", "cha",
+        "chb", "che", "chg", "chk", "chm", "chn", "cho", "chp", "chr", "chu", "chv", "chy", "cmc", "cnr", "cop",
+        "cor", "cos", "cpe", "cpf", "cpp", "cre", "crh", "crp", "csb", "cus", "cym", "wel", "dak", "dan", "dar",
+        "day", "del", "den", "deu", "ger", "dgr", "din", "div", "doi", "dra", "dsb", "dua", "dum", "dyu", "dzo",
+        "efi", "egy", "eka", "ell", "gre", "elx", "eng", "enm", "epo", "est", "eus", "baq", "ewe", "ewo", "fan",
+        "fao", "fas", "per", "fat", "fij", "fil", "fin", "fiu", "fon", "fra", "fre", "frm", "fro", "frr", "frs",
+        "fry", "ful", "fur", "gaa", "gay", "gba", "gem", "gez", "gil", "gla", "gle", "glg", "glv", "gmh", "goh",
+        "gon", "gor", "got", "grb", "grc", "grn", "gsw", "guj", "gwi", "hai", "hat", "hau", "haw", "heb", "her",
+        "hil", "him", "hin", "hit", "hmn", "hmo", "hrv", "hsb", "hun", "hup", "hye", "arm", "iba", "ibo", "ido",
+        "iii", "ijo", "iku", "ile", "ilo", "ina", "inc", "ind", "ine", "inh", "ipk", "ira", "iro", "isl", "ice",
+        "ita", "jav", "jbo", "jpn", "jpr", "jrb", "kaa", "kab", "kac", "kal", "kam", "kan", "kar", "kas", "kat",
+        "geo", "kau", "kaw", "kaz", "kbd", "kha", "khi", "khm", "kho", "kik", "kin", "kir", "kmb", "kok", "kom",
+        "kon", "kor", "kos", "kpe", "krc", "krl", "kro", "kru", "kua", "kum", "kur", "kut", "lad", "lah", "lam",
+        "lao", "lat", "lav", "lez", "lim", "lin", "lit", "lol", "loz", "ltz", "lua", "lub", "lug", "lui", "lun",
+        "luo", "lus", "mad", "mag", "mah", "mai", "mak", "mal", "man", "map", "mar", "mas", "mdf", "mdr", "men",
+        "mga", "mic", "min", "mis", "mkd", "mac", "mkh", "mlg", "mlt", "mnc", "mni", "mno", "moh", "mon", "mos",
+        "mri", "mao", "msa", "may", "mul", "mun", "mus", "mwl", "mwr", "mya", "bur", "myn", "myv", "nah", "nai",
+        "nap", "nau", "nav", "nbl", "nde", "ndo", "nds", "nep", "new", "nia", "nic", "niu", "nld", "dut", "nno",
+        "nob", "nog", "non", "nor", "nqo", "nso", "nub", "nwc", "nya", "nym", "nyn", "nyo", "nzi", "oci", "oji",
+        "ori", "orm", "osa", "oss", "ota", "oto", "paa", "pag", "pal", "pam", "pan", "pap", "pau", "peo", "phi",
+        "phn", "pli", "pol", "pon", "por", "pra", "pro", "pus", "qaa-qtz", "que", "raj", "rap", "rar", "roa",
+        "roh", "rom", "ron", "rum", "run", "rup", "rus", "sad", "sag", "sah", "sai", "sal", "sam", "san", "sas",
+        "sat", "scn", "sco", "sel", "sem", "sga", "sgn", "shn", "sid", "sin", "sio", "sit", "sla", "slk", "slo",
+        "slv", "sma", "sme", "smi", "smj", "smn", "smo", "sms", "sna", "snd", "snk", "sog", "som", "son", "sot",
+        "spa", "sqi", "alb", "srd", "srn", "srp", "srr", "ssa", "ssw", "suk", "sun", "sus", "sux", "swa", "swe",
+        "syc", "syr", "tah", "tai", "tam", "tat", "tel", "tem", "ter", "tet", "tgk", "tgl", "tha", "tig", "tir",
+        "tiv", "tkl", "tlh", "tli", "tmh", "tog", "ton", "tpi", "tsi", "tsn", "tso", "tuk", "tum", "tup", "tur",
+        "tut", "tvl", "twi", "tyv", "udm", "uga", "uig", "ukr", "umb", "und", "urd", "uzb", "vai", "ven", "vie",
+        "vol", "vot", "wak", "wal", "war", "was", "wen", "wln", "wol", "xal", "xho", "yao", "yap", "yid", "yor",
+        "ypk", "zap", "zbl", "zen", "zgh", "zha", "zho", "chi", "znd", "zul", "zun", "zxx", "zza"
+    ]
+    MetadataStandardID:
+      type: string
+      minimum: 1
+
+    #endregion
+    #region JSON patch
+
+    JSONPatchOperation:
+      oneOf:
+        - $ref: "#/components/schemas/JSONPatchAdd"
+        - $ref: "#/components/schemas/JSONPatchRemove"
+        - $ref: "#/components/schemas/JSONPatchReplace"
+        - $ref: "#/components/schemas/JSONPatchCopy"
+        - $ref: "#/components/schemas/JSONPatchMove"
+        - $ref: "#/components/schemas/JSONPatchTest"
+      discriminator:
+        propertyName: op
+        mapping:
+          add: "#/components/schemas/JSONPatchAdd"
+          remove: "#/components/schemas/JSONPatchRemove"
+          replace: "#/components/schemas/JSONPatchReplace"
+          copy: "#/components/schemas/JSONPatchCopy"
+          move: "#/components/schemas/JSONPatchMove"
+          test: "#/components/schemas/JSONPatchTest"
+    JSONPatchOp:
+      type: object
+      required:
+        - op
+        - path
+      properties:
+        op:
+          type: string
+        path:
+          $ref: "#/components/schemas/JSONPointer"
+    JSONPatchAdd:
+      title: Add a node
+      allOf:
+        - $ref: "#/components/schemas/JSONPatchOp"
+        - type: object
+          required:
+          - op
+          - value
+          properties:
+            op:
+              type: string
+              const: add
+            value:
+              type: any
+    JSONPatchRemove:
+      title: Remove a node
+      allOf:
+        - $ref: "#/components/schemas/JSONPatchOp"
+        - type: object
+          required:
+            - op
+          properties:
+            op:
+              type: string
+              const: remove
+    JSONPatchReplace:
+      title: Replace a node
+      allOf:
+        - $ref: "#/components/schemas/JSONPatchOp"
+        - type: object
+          required:
+            - op
+            - value
+          properties:
+            op:
+              type: string
+              const: replace
+            value:
+              type: any
+    JSONPatchCopy:
+      title: Copy a node to a different place
+      allOf:
+        - $ref: "#/components/schemas/JSONPatchOp"
+        - type: object
+          required:
+            - op
+            - from
+          properties:
+            op:
+              type: string
+              const: copy
+            from:
+              $ref: "#/components/schemas/JSONPointer"
+    JSONPatchMove:
+      title: Move one node to a different place
+      allOf:
+        - $ref: "#/components/schemas/JSONPatchOp"
+        - type: object
+          required:
+            - op
+            - from
+          properties:
+            op:
+              type: string
+              const: move
+            from:
+              $ref: "#/components/schemas/JSONPointer"
+    JSONPatchTest:
+      title: Test if a specified path matches the specified value
+      allOf:
+        - $ref: "#/components/schemas/JSONPatchOp"
+        - type: object
+          required:
+            - op
+            - value
+          properties:
+            op:
+              type: string
+              const: test
+            value:
+              type: any
+    JSONPointer:
+      title: JSON pointer
+      description: "[RFC 6901](https://datatracker.ietf.org/doc/html/rfc6901/) JSON pointer"
+      type: string
+      example: "/dmp"
+
+    #endregion
+    #region Subordinate objects
+
+    DMP:
+      $ref: "https://raw.githubusercontent.com/RDA-DMP-Common/RDA-DMP-Common-Standard/refs/heads/master/examples/JSON/JSON-schema/1.2/maDMP-schema-1.2.json"
+    DMPWithID:
+      allOf:
+        - type: object
+          required:
+            - id
+          properties:
+            id:
+              $ref: "#/components/schemas/DMPID"
+        - $ref: "#/components/schemas/DMP"
+
+    #endregion
+    #region Non-error responses
+
+    DMPListResponse:
+      type: object
+      properties:
+        total_count:
+          type: integer
+          minimum: 0
+        items:
+          $ref: "#/components/schemas/DMPWithID"
+
+    #endregion
+    #region Error responses
+
+    ErrorResponse:
+      type: object
+      required:
+        - error_code
+        - error_message
+      properties:
+        error_code:
+          type: string
+          description: An error code describing the specific error.
+        error_message:
+          title: Error message
+          description: A description of the error in English.
+          type: string
+    AuthenticationRequiredResponse:
+      title: "Authentication required"
+      description: Authentication required to perform the specified request.
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          properties:
+            error_code:
+              type: string
+              const: authentication_required
+    InsufficientPermissionsResponse:
+      title: "Insufficient permissions"
+      description: The current user has insufficient permissions to perform this action.
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          properties:
+            error_code:
+              type: string
+              const: insufficient_permissions
+    DMPAlreadyExistsResponse:
+      title: "DMP already exists"
+      description: |
+        The DMP system has identified this DMP to be already present in the system based on its DMP ID or other
+        characteristics. The error response SHOULD contain the existing DMP ID.
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          required:
+            - error_code
+            - id
+          properties:
+            error_code:
+              type: string
+              const: dmp_already_exists
+            id:
+              $ref: "#/components/schemas/DMPID"
+    DMPNotFoundResponse:
+      title: "DMP not found / insufficient permissions to access DMP"
+      description: |
+        This error can mean two things: either the specified DMP does not exist, or the implementation has chosen to
+        return a 404 error instead of a 401 or 403 to avoid leaking information about the existence of a DMP. If the
+        requester is not authenticated, the request may be retried after authentication to possibly retrieve the DMP.
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          properties:
+            error_code:
+              type: string
+              const: dmp_not_found
+    InvalidQueryStringResponse:
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          properties:
+            error_code:
+              type: string
+              const: invalid_query_string
+    PatchNotSupportedResponse:
+      description: |
+        The PATCH method is not supported for partial updates of a DMP and the client should retry the request using the
+        PUT method.
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          properties:
+            error_code:
+              type: string
+              const: patch_not_supported
+    ConflictResponse:
+      description: |
+        The server failed to apply the patch because a JSON Patch test failed. If the patch applies successfully, but
+        results in an invalid DMP, an DMPInvalidResponse (400) is returned instead.
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          properties:
+            error_code:
+              type: string
+              const: patch_conflict
+    DMPInvalidResponse:
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          required:
+            - error_code
+          properties:
+            error_code:
+              type: string
+              const: invalid_dmp
+            field_errors:
+              description: |
+                A list of error descriptions with JSONPath expressions detailing which field(s) are causing this error.
+                While this is optional, adding it can aid with creating a helpful user interface. However, compliant
+                client implementations should also be able to compute these validation failures based on the DMP JSON
+                schema and should not need to rely on the server to tell them which fields are invalid. This is
+                especially true if the client is displaying content in a language other than English as the server only
+                returns English-language error messages.
+              # TODO: this field is likely too complex to implement since most DMP tools will refer to a third-party
+              #       JSON schema validation library and will likely not be able to implement returning a field-by-field
+              #       listing of all errors in the DMP. Translation of errors is also a problem.
+              type: array
+              items:
+                type: object
+                required: [field, error_type, error_message]
+                properties:
+                  field:
+                    description: JSONPath string to describe the invalid field.
+                    type: string
+                  error_message:
+                    description: English language error message describing the problem with the listed field.
+                    type: string
+    GenericErrorResponse:
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          properties:
+            error_code:
+              type: string
+              const: generic_error
+
+    #endregion
