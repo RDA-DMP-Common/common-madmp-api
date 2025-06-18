@@ -548,6 +548,126 @@ paths:
           description: DMP or dataset not found
         '500':
           description: Internal server error
+  /dmps/{dmpId}/projects/{projectId}/fundings:
+    get:
+      tags:
+        - Funding
+      summary: List fundings of a project
+      description: Retrieve all funding records associated with a specific project within a DMP.
+      operationId: listFundingsByProject
+      parameters:
+        - $ref: '#/components/parameters/dmpId'
+        - $ref: '#/components/parameters/projectId'
+      responses:
+        200:
+          description: A list of funding records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Funding'
+        404:
+          description: Project or DMP not found
+  
+  
+    post:
+      tags:
+        - Funding
+      summary: Create a funding
+      description: Add a new funding record to a specific project within a DMP.
+      operationId: createFunding
+      parameters:
+        - $ref: '#/components/parameters/dmpId'
+        - $ref: '#/components/parameters/projectId'
+      requestBody:
+        description: The funding data to create
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Funding'
+      responses:
+        201:
+          description: Funding record created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Funding'
+        400:
+          description: Invalid funding data provided
+  
+  /dmps/{dmpId}/projects/{projectId}/fundings/{fundingId}:
+    get:
+      tags:
+        - Funding
+      summary: Get a funding
+      description: Retrieve a specific funding record for a project within a DMP
+      operationId: getFunding
+      parameters:
+        - $ref: '#/components/parameters/dmpId'
+        - $ref: '#/components/parameters/projectId'
+        - $ref: '#/components/parameters/fundingId'
+      responses:
+        200:
+          description: Funding record retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Funding'
+        404:
+          description: Funding record not found
+  
+  
+    put:
+      tags:
+        - Funding
+      summary: Update a funding
+      description: Update or replace an existing funding record
+      operationId: updateFunding
+      parameters:
+        - $ref: '#/components/parameters/dmpId'
+        - $ref: '#/components/parameters/projectId'
+        - $ref: '#/components/parameters/fundingId'
+      requestBody:
+        description: Updated funding data
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Funding'
+      responses:
+        200:
+          description: Funding record updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Funding'
+        400:
+          description: Invalid funding data provided
+  
+        404:
+          description: Funding record not found
+  
+  
+    delete:
+      tags:
+        - Funding
+      summary: Delete a funding
+      description: Remove a funding record from a project
+      operationId: deleteFunding
+      parameters:
+        - $ref: '#/components/parameters/dmpId'
+        - $ref: '#/components/parameters/projectId'
+        - $ref: '#/components/parameters/fundingId'
+      responses:
+        204:
+          description: Funding record deleted successfully
+        404:
+          description: Funding record not found
+
+
+    
 #
 #  /dmps/{dmpId}/datasets/{datasetId}/distributions:
 #    get:
@@ -748,6 +868,27 @@ paths:
 #      responses: {}
 
 components:
+  parameters:
+    dmpId:
+      name: dmpId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    projectId:
+      name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    fundingId:
+      name: fundingId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/FunderID'
   schemas:
     DMPQueryRequest:
       type: object
@@ -1468,3 +1609,59 @@ components:
                 description: >
                   Title of the (summarized) dataset.
                 example: Fast car images
+
+    Funding:
+          type: object
+          required:
+            - funder_id
+          properties:
+            funder_id:
+              $ref: '#/components/schemas/FunderID'
+            funding_status:
+              type: string
+              enum:
+                - planned
+                - applied
+                - granted
+                - rejected
+              description: To express different phases of project lifecycle
+              example: "granted"
+            grant_id:
+              $ref: '#/components/schemas/GrantID'
+        
+    FunderID:
+      type: object
+      required:
+        - identifier
+        - type
+      properties:
+        identifier:
+          type: string
+          description: Funder ID, recommended to use CrossRef Funder Registry
+          example: "501100002428"
+        type:
+          type: string
+          enum:
+            - fundref
+            - url
+            - other
+          description: Identifier type
+          example: "Horizon Europe"
+
+      
+    GrantID:
+      type: object
+      required:
+        - identifier
+        - type
+      properties:
+        identifier:
+          type: string
+          description: Grant ID
+          example: "776242"
+        type:
+          type: string
+          enum:
+            - url
+            - other
+          description: Identifier type
