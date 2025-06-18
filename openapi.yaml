@@ -1025,6 +1025,402 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GenericErrorResponse"
+  /dmps/{id}/projects:
+    get:
+      summary: Get the projects associated with a DMP
+      operationId: getProject
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/DMPID"
+      responses:
+        200:
+          description: DMP projects retrieved
+          headers:
+            Last-Modified:
+              description: |
+                The server should expose the time the DMP was last modified to allow for a conditional PUT request.
+                This is especially important if the server does not support PATCH requests.
+              schema:
+                type: string
+                format: date-time
+            ETag:
+              description: |
+                The server should compute a hash of the DMP so that clients may submit conditional PUT requests and
+                avoid conflicts. This is especially important if the server does not support PATCH requests.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DMPProject"
+        401:
+          description: |
+            Authentication required to get the specified DMP. The implementation may choose between returning this error
+            code for all DMP requests if the API isn't available without authentication, or it may return this error
+            code for non-public DMPs. Alternatively, other DMPs are available without authentication, the implementation
+            may opt to return a 404 instead to prevent information leaks about the existence of a DMP. This may
+            especially be important if the DMP tool uses numeric IDs to avoid enabling an enumeration of possible DMP
+            IDs.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationRequiredResponse"
+        403:
+          description: |
+            Insufficient permissions to get the specified a DMP.
+            Note: the implementation may opt to return a 404 instead to avoid leaking information about the
+            existence of a DMP with the specified ID. This may especially be important if the DMP tool uses numeric IDs
+            to avoid enabling an enumeration of possible DMP IDs.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsufficientPermissionsResponse"
+        404:
+          description: |
+            This error code can indicate two possible scenarios: either the DMP itself does not exist, or the DMP has
+            no project object associated with it. The error code in the response indicates which is the case.
+            Security note: implementations may return this error code even if the DMP exists but the authenticated user
+            has no permissions to view it in order to avoid leaking information about the existence of a DMP. This may
+            especially be important if the DMP tool uses numeric IDs to avoid enabling an enumeration of possible DMP
+            IDs.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/DMPNotFoundResponse"
+                  - $ref: "#/components/schemas/DMPProjectNotFoundResponse"
+                discriminator:
+                  propertyName: error_code
+                  mapping:
+                    dmp_not_found: "#/components/schemas/DMPNotFoundResponse"
+                    dmp_project_not_found: "#/components/schemas/DMPProjectNotFoundResponse"
+        405:
+          description: |
+            The server does not implement this optional endpoint. The client should retry the request
+            using the main /dmps endpoint and get the full DMP.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EndpointNotSupportedResponse"
+        default:
+          description: The request failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericErrorResponse"
+    put:
+      operationId: putProject
+      summary: Overwrite the projects of a DMP
+      description: Completely overwrite the projects of a DMP with the specified data.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/DMPID"
+        - name: If-Unmodified-Since
+          in: header
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: If-Match
+          in: header
+          required: false
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DMPProject"
+      responses:
+        200:
+          description: Project modified
+          headers:
+            Last-Modified:
+              description: |
+                The server should expose the time the DMP was last modified to allow for a conditional PUT request.
+                This is especially important if the server does not support PATCH requests.
+              schema:
+                type: string
+                format: date-time
+            ETag:
+              description: |
+                The server should compute a hash of the DMP so that clients may submit conditional PUT requests and
+                avoid conflicts. This is especially important if the server does not support PATCH requests.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DMPProject"
+        400:
+          description: |
+            The update to the project object resulted in an invalid DMP object. This is typically the case if the
+            project object passed in the request itself was invalid. Implementations SHOULD make sure that the DMP
+            object conforms to the common standard before applying the change to ensure this error code is not
+            erroneously issued when the DMP was already invalid before the change was applied. This can be done
+            by using a strict database schema or by applying JSON schema validation before applying the modification.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DMPInvalidResponse"
+        401:
+          description: |
+            Authentication required to modify the specified DMP. Implementations should always return this error code
+            for unauthenticated requests as modifications always require authentication.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationRequiredResponse"
+        403:
+          description: |
+            Insufficient permissions to modify the specified a DMP.
+            Note: the implementation may opt to return a 404 instead to avoid leaking information about the
+            existence of a DMP with the specified ID if the user has no permissions to view or modify this DMP. The
+            implementation SHOULD return this error code if the user has at least view permissions for this DMP.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsufficientPermissionsResponse"
+        404:
+          # Note: while not RFC conformant, returning a 404 instead of a 401/403 for individual objects is quite
+          # wide-spread in the industry. See for example the GitHub API.
+          description: |
+            DMP not found or not enough permissions to fetch the specified DMP.
+            Security note: implementations may return this error code even if the DMP exists but the authenticated user
+            has no permissions to view it in order to avoid leaking information about the existence of a DMP. This may
+            especially be important if the DMP tool uses numeric IDs to avoid enabling an enumeration of possible DMP
+            IDs.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DMPNotFoundResponse"
+        405:
+          description: |
+            The server does not implement this optional endpoint. The client should retry the request
+            using the main /dmps endpoint and update the full DMP.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EndpointNotSupportedResponse"
+        409:
+          description: |
+            A precondition specified in the If-Unmodified-Since or If-Match header cannot be
+            fulfilled. The client should apply the modifications again and resubmit the request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictResponse"
+        default:
+          description: The request failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericErrorResponse"
+    patch:
+      operationId: patchProject
+      summary: Partially update a Project object
+      description: |
+        Partially update a DMP by specifying the fields that should be updated using the JSON patch (RFC 6902) method.
+        This endpoint is OPTIONAL. If a 405 Method Not Allowed response is returned, the client should retry the request
+        by submitting a PUT request to update the full DMP.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/DMPID"
+        - name: If-Unmodified-Since
+          in: header
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: If-Match
+          in: header
+          required: false
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/JSONPatchOperation"
+      responses:
+        200:
+          description: The DMP was updated
+          headers:
+            Last-Modified:
+              description: |
+                The server should expose the time the DMP was last modified to allow for a conditional PUT request.
+                This is especially important if the server does not support PATCH requests.
+              schema:
+                type: string
+                format: date-time
+            ETag:
+              description: |
+                The server should compute a hash of the DMP so that clients may submit conditional PUT requests and
+                avoid conflicts. This is especially important if the server does not support PATCH requests.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DMPProject"
+        400:
+          description: |
+            The update to the project object resulted in an invalid DMP object. This is typically the case if the
+            project object passed in the request itself was invalid. Implementations SHOULD make sure that the DMP
+            object conforms to the common standard before applying the change to ensure this error code is not
+            erroneously issued when the DMP was already invalid before the change was applied. This can be done
+            by using a strict database schema or by applying JSON schema validation before applying the modification.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DMPInvalidResponse"
+        401:
+          description: |
+            Authentication required to modify the DMP. The implementation should always return this error code for
+            unauthenticated users as deletion always requires authentication.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationRequiredResponse"
+        403:
+          description: |
+            Insufficient permissions to modify the specified a DMP.
+            Note: the implementation may opt to return a 404 instead to avoid leaking information about the
+            existence of a DMP with the specified ID if the user has no permissions to at least view this DMP. The
+            implementation SHOULD return this error code if the user has at least read permissions for this DMP.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsufficientPermissionsResponse"
+        404:
+          description: |
+            DMP not found or not enough permissions to modify the specified DMP.
+            Security note: implementations may return this error code even if the DMP exists but the authenticated user
+            has no permissions to view it in order to avoid leaking information about the existence of a DMP. The
+            implementation SHOULD NOT return this error code if the user has at least read permissions for the
+            specified DMP.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DMPNotFoundResponse"
+        405:
+          description:
+            This response indicates that the server either doesn't support PATCH requests for partial DMP
+            updates, or it doesn't support this endpoint at all. The client should either check the included error code,
+            or first retry an update using a PUT request and then fall back to the generic /dmps endpoint.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/PatchNotSupportedResponse"
+                  - $ref: "#/components/schemas/EndpointNotSupportedResponse"
+                discriminator:
+                  propertyName: error_code
+                  mapping:
+                    patch_not_supported: "#/components/schemas/PatchNotSupportedResponse"
+                    endpoint_not_supported: "#/components/schemas/EndpointNotSupportedResponse"
+        409:
+          description: |
+            The server could not apply the patch because a JSON Patch test failed. The server should NOT return
+            this error if the DMP itself failed validation after the apply.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictResponse"
+        default:
+          description: The request failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericErrorResponse"
+    delete:
+      operationId: deleteProject
+      summary: Delete the project
+      description: Delete a project object from a DMP based on its ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/DMPID"
+        - name: If-Unmodified-Since
+          in: header
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: If-Match
+          in: header
+          required: false
+          schema:
+            type: string
+      responses:
+        204:
+          description: DMP project deleted
+        401:
+          description: |
+            Authentication required to delete the project. The implementation should always return this error code for
+            unauthenticated users as DMP modification always requires authentication.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationRequiredResponse"
+        403:
+          description: |
+            Insufficient permissions to modify the specified a DMP.
+            Note: the implementation may opt to return a 404 instead to avoid leaking information about the
+            existence of a DMP with the specified ID if the user has no permissions to at least view this DMP. The
+            implementation SHOULD return this error code if the user has at least read permissions for this DMP.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsufficientPermissionsResponse"
+        404:
+          description: |
+            DMP not found or not enough permissions to modify the specified DMP.
+            Security note: implementations may return this error code even if the DMP exists but the authenticated user
+            has no permissions to view it in order to avoid leaking information about the existence of a DMP. This may
+            especially be important if the DMP tool uses numeric IDs to avoid enabling an enumeration of possible DMP
+            IDs.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DMPNotFoundResponse"
+        405:
+          description: |
+            The server does not implement this optional endpoint. The client should retry the request
+            using the main /dmps endpoint and update the full DMP.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EndpointNotSupportedResponse"
+        409:
+          description: |
+            A precondition specified in the If-Unmodified-Since or If-Match header cannot be
+            fulfilled. The client should apply the modifications again and resubmit the request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictResponse"
+        default:
+          description: The request failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericErrorResponse"
 
 components:
   schemas:
@@ -1229,6 +1625,8 @@ components:
         - $ref: "#/components/schemas/DMP"
     DMPCost:
       $ref: "https://raw.githubusercontent.com/RDA-DMP-Common/RDA-DMP-Common-Standard/refs/heads/master/examples/JSON/JSON-schema/1.2/maDMP-schema-1.2.json#/properties/dmp/properties/cost"
+    DMPProject:
+      $ref: "https://raw.githubusercontent.com/RDA-DMP-Common/RDA-DMP-Common-Standard/refs/heads/master/examples/JSON/JSON-schema/1.2/maDMP-schema-1.2.json#/properties/dmp/properties/project"
 
     #endregion
     #region Non-error responses
@@ -1331,6 +1729,17 @@ components:
             error_code:
               type: string
               const: dmp_cost_not_found
+    DMPProjectNotFoundResponse:
+      title: "DMP project object not found"
+      description: |
+        The specified DMP exists, but no associated project object was found.
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          properties:
+            error_code:
+              type: string
+              const: dmp_project_not_found
     InvalidQueryStringResponse:
       allOf:
         - $ref: "#/components/schemas/ErrorResponse"
