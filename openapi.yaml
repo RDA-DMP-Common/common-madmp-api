@@ -1,839 +1,2421 @@
-openapi: 3.1.1
+openapi: 3.1.4
 info:
-  title: Swagger Petstore - OpenAPI 3.1
-  description: |-
-    This is a sample Pet Store Server based on the OpenAPI 3.0 specification.  You can find out more about
-    Swagger at [https://swagger.io](https://swagger.io). In the third iteration of the pet store, we've switched to the design first approach!
-    You can now help us improve the API whether it's by making changes to the definition itself or to the code.
-    That way, with time, we can improve the API in general, and expose some of the new features in OAS3.
+  title: Common Machine-Actionable DMP API
+  description: |
+    This API provides access to Data Management Plans in a machine-readable format. You can use this API to perform
+    automated analysis or other integration. Please note that this API may not give you all information stored in the
+    system implementing it as this standard is intended as a common baseline among multiple DMP platform vendors.
 
-    Some useful links:
-    - [The Pet Store repository](https://github.com/swagger-api/swagger-petstore)
-    - [The source API definition for the Pet Store](https://github.com/swagger-api/swagger-petstore/blob/master/src/main/resources/openapi.yaml)
-  termsOfService: https://swagger.io/terms/
-  contact:
-    email: apiteam@swagger.io
+    # Schema extension
+
+    This API supports extending the standard by using content negotiation. The MIME types used for content negotiation
+    *should* follow the vendor tree naming defined in
+    [RFC 6838 Section 3.2](https://datatracker.ietf.org/doc/html/rfc6838#section-3.2) and make use of the media type
+    suffixes defined in [RFC6839](https://www.rfc-editor.org/rfc/rfc6839). The vendor prefix should be chosen such that
+    the vendor is clearly identifiable. For example:
+
+    ```
+    application/vnd.com.example.dmp+json
+    ```
+
+    Clients *should* send an `Accept` header with their preferred MIME types. The server *must* order the contents of
+    the `Accept` header correctly and select the standard with the highest client preference.
+    (See the [MDN docs](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Accept) for a detailed
+    explanation on this header.)
+
+    If the client sends no `Accept` header or sends an unqualified `application/json` request, the server *may* select
+    the "stock" schema represented in this document or may select an extended schema only if the extended schema fully
+    adheres to this standard with only extra added fields, but no existing fields removed or modified. In this case, the
+    server *must* respond with the `application/json` content type. Clients *should* not rely on receiving an extended
+    schema document when sending an `application/json` request and *should* prefer sending a qualified MIME type.
+
+    The correct MIME-type for the DMP standard used in this specification is:
+
+    ```
+    application/vnd.org.rd-alliance.dmp-common.v1.2+json
+    ```
+
+    Client and server implementations *may* agree on a different serialization to JSON, such as XML, by specifying the
+    corresponding suffix. Clients and servers *must* support JSON serialization.
+
+    # Conflict resolution
+
+    This API makes use of the `Last-Modified` headers in order to resolve conflicts. When updating a DMP, consider
+    passing the `Last-Modified` header from the response in the `If-Unmodified-Since` header in the PUT request. If the
+    DMP has been modified since you last fetched the data, the server will return a 409 header.
+
+    Server implementations should always update the modified field of the DMP to the server time on PUT and return it
+    in the `Last-Modified` header. On PUT, server implementations should compare the `If-Unmodified-Since` header with
+    the stored modified field.
+  version: 0.1.0
   license:
-    name: Apache 2.0
-    url: https://www.apache.org/licenses/LICENSE-2.0.html
-  version: 1.0.27-SNAPSHOT
+    name: Creative Commons Zero v1.0 Universal
+    identifier: "CC0-1.0"
 externalDocs:
-  description: Find out more about Swagger
-  url: https://swagger.io
-servers:
-  - url: https://petstore3.swagger.io/api/v3
+  description: RDA DMP Common Standards WG
+  url: https://github.com/RDA-DMP-Common
 tags:
-  - name: pet
-    description: Everything about your Pets
-    externalDocs:
-      description: Find out more
-      url: https://swagger.io
-  - name: store
-    description: Access to Petstore orders
-    externalDocs:
-      description: Find out more about our store
-      url: https://swagger.io
-  - name: user
-    description: Operations about user
+  - name: DMP
+    description: DMP-related endpoints
 paths:
-  /pet:
-    put:
-      tags:
-        - pet
-      summary: Update an existing pet.
-      description: Update an existing pet by Id.
-      operationId: updatePet
-      requestBody:
-        description: Update an existent pet in the store
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Pet'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/Pet'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Pet'
-        required: true
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Pet'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/Pet'
-        '400':
-          description: Invalid ID supplied
-        '404':
-          description: Pet not found
-        '422':
-          description: Validation exception
-        default:
-          description: Unexpected error
-      security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
-    post:
-      tags:
-        - pet
-      summary: Add a new pet to the store.
-      description: Add a new pet to the store.
-      operationId: addPet
-      requestBody:
-        description: Create a new pet in the store
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Pet'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/Pet'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Pet'
-        required: true
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Pet'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/Pet'
-        '400':
-          description: Invalid input
-        '422':
-          description: Validation exception
-        default:
-          description: Unexpected error
-      security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
-  /pet/findByStatus:
+  /dmps:
     get:
+      summary: List/search DMPs
+      description: |
+        This endpoint lists all DMPs or allows for creating a filtered list. When filters are provided,
+        all filter are applied (AND relationship). For filters supporting lists, the individual values are applied
+        as an OR relationship.
+
+        For items accepting more than one value you may pass multiple values by repeating the parameter in the
+        query string for each item.
+      operationId: listDMPs
       tags:
-        - pet
-      summary: Finds Pets by status.
-      description: Multiple status values can be provided with comma separated strings.
-      operationId: findPetsByStatus
+        - DMP
       parameters:
-        - name: status
+        - name: offset
           in: query
-          description: Status values that need to be considered for filter
           required: false
-          explode: true
+          description: Number of items to skip from the start.
+          schema:
+            title: Offset
+            type: integer
+            minimum: 0
+            default: 0
+        - name: count
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Number of items to fetch.
+        - name: sort[]
+          description: |
+            A list of fields to sort by with the sort order.
+          in: query
+          required: false
+          schema:
+            type: array
+            default: ["created,desc"]
+            items:
+              type: string
+              default: created,desc
+              enum:
+                - title,asc
+                - title,desc
+                - created,asc
+                - created,desc
+                - modified,asc
+                - modified,desc
+                - language,asc
+                - language,desc
+                - embargo,asc
+                - embargo,desc
+                - keyword,asc
+                - keyword,desc
+        - name: created_before
+          in: query
+          required: false
           schema:
             type: string
-            default: available
-            enum:
-              - available
-              - pending
-              - sold
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Pet'
-            application/xml:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Pet'
-        '400':
-          description: Invalid status value
-        default:
-          description: Unexpected error
-      security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
-  /pet/findByTags:
-    get:
-      tags:
-        - pet
-      summary: Finds Pets by tags.
-      description: Multiple tags can be provided with comma separated strings. Use tag1, tag2, tag3 for testing.
-      operationId: findPetsByTags
-      parameters:
-        - name: tags
+            format: date-time
+        - name: created_after
           in: query
-          description: Tags to filter by
           required: false
-          explode: true
+          schema:
+            type: string
+            format: date-time
+        - name: modified_before
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: modified_after
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: languages[]
+          in: query
+          required: false
           schema:
             type: array
             items:
-              type: string
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Pet'
-            application/xml:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Pet'
-        '400':
-          description: Invalid tag value
-        default:
-          description: Unexpected error
-      security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
-  /pet/{petId}:
-    get:
-      tags:
-        - pet
-      summary: Find pet by ID.
-      description: Returns a single pet.
-      operationId: getPetById
-      parameters:
-        - name: petId
-          in: path
-          description: ID of pet to return
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Pet'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/Pet'
-        '400':
-          description: Invalid ID supplied
-        '404':
-          description: Pet not found
-        default:
-          description: Unexpected error
-      security:
-        - api_key: []
-        - petstore_auth:
-            - write:pets
-            - read:pets
-    post:
-      tags:
-        - pet
-      summary: Updates a pet in the store with form data.
-      description: Updates a pet resource based on the form data.
-      operationId: updatePetWithForm
-      parameters:
-        - name: petId
-          in: path
-          description: ID of pet that needs to be updated
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: name
+              $ref: "#/components/schemas/LanguageID"
+        - name: contact_ids[]
           in: query
-          description: Name of pet that needs to be updated
+          required: false
           schema:
-            type: string
-        - name: status
+            type: array
+            items:
+              $ref: "#/components/schemas/ContactIDValue"
+        - name: contributor_ids[]
           in: query
-          description: Status of pet that needs to be updated
+          required: false
           schema:
-            type: string
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Pet'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/Pet'
-        '400':
-          description: Invalid input
-        default:
-          description: Unexpected error
-      security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
-    delete:
-      tags:
-        - pet
-      summary: Deletes a pet.
-      description: Delete a pet.
-      operationId: deletePet
-      parameters:
-        - name: api_key
-          in: header
-          description: ''
+            type: array
+            items:
+              $ref: "#/components/schemas/ContributorIDValue"
+        - name: dataset_ids[]
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/DatasetIDValue"
+        - name: metadata_standard_ids[]
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/MetadataStandardIDValue"
+        - name: dmp_ids[]
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/DMPIDValue"
+        - name: funder_ids[]
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/FunderIDValue"
+        - name: grant_ids[]
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/GrantIDValue"
+        - name: query
+          in: query
           required: false
           schema:
             type: string
-        - name: petId
-          in: path
-          description: Pet id to delete
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: Pet deleted
-        '400':
-          description: Invalid pet value
-        default:
-          description: Unexpected error
-      security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
-  /pet/{petId}/uploadImage:
-    post:
-      tags:
-        - pet
-      summary: Uploads an image.
-      description: Upload image of the pet.
-      operationId: uploadFile
-      parameters:
-        - name: petId
-          in: path
-          description: ID of pet to update
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: additionalMetadata
+        - name: ethical_issues_exist
           in: query
-          description: Additional Metadata
+          required: false
+          schema:
+            type: boolean
+        - name: embargo_before
+          in: query
           required: false
           schema:
             type: string
+            format: date
+        - name: embargo_after
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          $ref: "#/components/responses/DMPListResponse"
+        400:
+          $ref: "#/components/responses/BadRequestResponse"
+        401:
+          $ref: "#/components/responses/AuthenticationRequiredResponse"
+        406:
+          $ref: "#/components/responses/NotAcceptableResponse"
+        default:
+          $ref: "#/components/responses/GenericErrorResponse"
+    post:
+      summary: Create a DMP
+      description: |
+        Create or import a DMP from a JSON-formed DMP object. The implementation may opt to allow the creation of
+        draft DMPs with formally valid, but incomplete fields. Alternatively, the implementation may reject incomplete
+        DMPs if it cannot store them.
+      operationId: createDMP
+      tags:
+        - DMP
       requestBody:
+        required: true
         content:
-          application/octet-stream:
+          application/vnd.org.rd-alliance.dmp-common.v1.2+json:
             schema:
-              type: string
-              format: binary
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiResponse'
-        '400':
-          description: No file uploaded
-        '404':
-          description: Pet not found
-        default:
-          description: Unexpected error
-      security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
-  /store/inventory:
-    get:
-      tags:
-        - store
-      summary: Returns pet inventories by status.
-      description: Returns a map of status codes to quantities.
-      operationId: getInventory
-      x-swagger-router-controller: OrderController
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties:
-                  type: integer
-                  format: int32
-        default:
-          description: Unexpected error
-      security:
-        - api_key: []
-  /store/order:
-    post:
-      tags:
-        - store
-      summary: Place an order for a pet.
-      description: Place a new order in the store.
-      x-swagger-router-controller: OrderController
-      operationId: placeOrder
-      requestBody:
-        content:
+              $ref: "#/components/schemas/DMPDocument"
           application/json:
             schema:
-              $ref: '#/components/schemas/Order'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/Order'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Order'
+              $ref: "#/components/schemas/DMPDocument"
       responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Order'
-        '400':
-          description: Invalid input
-        '422':
-          description: Validation exception
-        default:
-          description: Unexpected error
-  /store/order/{orderId}:
-    get:
-      tags:
-        - store
-      summary: Find purchase order by ID.
-      x-swagger-router-controller: OrderController
-      description: For valid response try integer IDs with value <= 5 or > 10. Other values will generate exceptions.
-      operationId: getOrderById
-      parameters:
-        - name: orderId
-          in: path
-          description: ID of order that needs to be fetched
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Order'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/Order'
-        '400':
-          description: Invalid ID supplied
-        '404':
-          description: Order not found
-        default:
-          description: Unexpected error
-    delete:
-      tags:
-        - store
-      summary: Delete purchase order by identifier.
-      description: For valid response try integer IDs with value < 1000. Anything above 1000 or non-integers will generate API errors.
-      x-swagger-router-controller: OrderController
-      operationId: deleteOrder
-      parameters:
-        - name: orderId
-          in: path
-          description: ID of the order that needs to be deleted
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: order deleted
-        '400':
-          description: Invalid ID supplied
-        '404':
-          description: Order not found
-        default:
-          description: Unexpected error
-  /user:
-    post:
-      tags:
-        - user
-      summary: Create user.
-      description: This can only be done by the logged in user.
-      x-swagger-router-controller: UserController
-      operationId: createUser
-      requestBody:
-        description: Created user object
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/User'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/User'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/User'
-        default:
-          description: Unexpected error
-  /user/createWithList:
-    post:
-      tags:
-        - user
-      summary: Creates list of users with given input array.
-      description: Creates list of users with given input array.
-      x-swagger-router-controller: UserController
-      operationId: createUsersWithListInput
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/User'
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/User'
-        default:
-          description: Unexpected error
-  /user/login:
-    get:
-      tags:
-        - user
-      summary: Logs user into the system.
-      description: Log into the system.
-      operationId: loginUser
-      parameters:
-        - name: username
-          in: query
-          description: The user name for login
-          required: false
-          schema:
-            type: string
-        - name: password
-          in: query
-          description: The password for login in clear text
-          required: false
-          schema:
-            type: string
-      responses:
-        '200':
-          description: successful operation
+        200:
+          description: DMP successfully created
           headers:
-            X-Rate-Limit:
-              description: calls per hour allowed by the user
-              schema:
-                type: integer
-                format: int32
-            X-Expires-After:
-              description: date in UTC when token expires
+            Last-Modified:
+              description: |
+                The server should expose the time the DMP was last modified to allow for a conditional PUT request.
+                This is especially important if the server does not support PATCH requests.
               schema:
                 type: string
                 format: date-time
           content:
-            application/xml:
+            application/vnd.org.rd-alliance.dmp-common.v1.2+json:
               schema:
-                type: string
+                $ref: "#/components/schemas/DMPWithID"
             application/json:
               schema:
-                type: string
-        '400':
-          description: Invalid username/password supplied
+                $ref: "#/components/schemas/DMPWithID"
+        400:
+          $ref: "#/components/responses/BadRequestResponse"
+        401:
+          $ref: "#/components/responses/AuthenticationRequiredResponse"
+        403:
+          $ref: "#/components/responses/InsufficientPermissionsResponse"
+        406:
+          $ref: "#/components/responses/NotAcceptableResponse"
+        409:
+          $ref: "#/components/responses/ConflictResponse"
         default:
-          description: Unexpected error
-  /user/logout:
+          $ref: "#/components/responses/GenericErrorResponse"
+  /dmps/{id}:
     get:
+      summary: Get a DMP
+      description: |
+        Fetch a DMP based on its ID.
+      operationId: getDMP
       tags:
-        - user
-      summary: Logs out current logged in user session.
-      description: Log user out of the system.
-      operationId: logoutUser
-      parameters: []
-      responses:
-        '200':
-          description: successful operation
-        default:
-          description: Unexpected error
-  /user/{username}:
-    get:
-      tags:
-        - user
-      summary: Get user by user name.
-      description: Get user detail based on username.
-      operationId: getUserByName
+        - DMP
       parameters:
-        - name: username
+        - name: id
           in: path
-          description: The name that needs to be fetched. Use user1 for testing
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/DMPSystemID"
       responses:
-        '200':
-          description: successful operation
+        200:
+          description: DMP retrieved
+          headers:
+            Last-Modified:
+              description: |
+                The server should expose the time the DMP was last modified to allow for a conditional PUT request.
+              schema:
+                type: string
+                format: date-time
           content:
+            application/vnd.org.rd-alliance.dmp-common.v1.2+json:
+              schema:
+                $ref: "#/components/schemas/DMPWithID"
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/User'
-        '400':
-          description: Invalid username supplied
-        '404':
-          description: User not found
+                $ref: "#/components/schemas/DMPWithID"
+        401:
+          $ref: "#/components/responses/AuthenticationRequiredResponse"
+        403:
+          $ref: "#/components/responses/InsufficientPermissionsResponse"
+        404:
+          $ref: "#/components/responses/DMPNotFoundResponse"
+        406:
+          $ref: "#/components/responses/NotAcceptableResponse"
         default:
-          description: Unexpected error
+          $ref: "#/components/responses/GenericErrorResponse"
     put:
+      operationId: putDMP
       tags:
-        - user
-      summary: Update user resource.
-      description: This can only be done by the logged in user.
-      x-swagger-router-controller: UserController
-      operationId: updateUser
+        - DMP
+      summary: Overwrite a DMP
+      description: |
+        Completely overwrite a DMP with the specified data. The server MUST honor the If-Unmodified-Since and IF-Match
+        headers if present.
       parameters:
-        - name: username
+        - name: id
           in: path
-          description: name that need to be deleted
           required: true
           schema:
+            $ref: "#/components/schemas/DMPSystemID"
+        - name: If-Unmodified-Since
+          in: header
+          required: false
+          schema:
             type: string
+            format: date-time
       requestBody:
-        description: Update an existent user in the store
+        required: true
         content:
+          application/vnd.org.rd-alliance.dmp-common.v1.2+json:
+            schema:
+              $ref: "#/components/schemas/DMPDocument"
           application/json:
             schema:
-              $ref: '#/components/schemas/User'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/User'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/User'
+              $ref: "#/components/schemas/DMPDocument"
       responses:
-        '200':
-          description: successful operation
-        '400':
-          description: bad request
-        '404':
-          description: user not found
+        200:
+          description: DMP modified
+          headers:
+            Last-Modified:
+              description: |
+                The server should expose the time the DMP was last modified to allow for a conditional PUT request.
+                This is especially important if the server does not support PATCH requests.
+              schema:
+                type: string
+                format: date-time
+          content:
+            application/vnd.org.rd-alliance.dmp-common.v1.2+json:
+              schema:
+                $ref: "#/components/schemas/DMPWithID"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DMPWithID"
+        400:
+          $ref: "#/components/responses/BadRequestResponse"
+        401:
+          $ref: "#/components/responses/AuthenticationRequiredResponse"
+        403:
+          $ref: "#/components/responses/InsufficientPermissionsResponse"
+        404:
+          $ref: "#/components/responses/DMPNotFoundResponse"
+        406:
+          $ref: "#/components/responses/NotAcceptableResponse"
+        409:
+          $ref: "#/components/responses/ConflictResponse"
+        415:
+          $ref: "#/components/responses/UnsupportedMediaTypeResponse"
         default:
-          description: Unexpected error
+          $ref: "#/components/responses/GenericErrorResponse"
     delete:
+      operationId: deleteDMP
       tags:
-        - user
-      summary: Delete user resource.
-      description: This can only be done by the logged in user.
-      operationId: deleteUser
+        - DMP
+      summary: Delete a DMP
+      description: Delete a DMP based on its ID.
       parameters:
-        - name: username
+        - name: id
           in: path
-          description: The name that needs to be deleted
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/DMPSystemID"
       responses:
-        '200':
-          description: User deleted
-        '400':
-          description: Invalid username supplied
-        '404':
-          description: User not found
+        204:
+          description: DMP deleted
+        401:
+          $ref: "#/components/responses/AuthenticationRequiredResponse"
+        403:
+          $ref: "#/components/responses/InsufficientPermissionsResponse"
+        404:
+          $ref: "#/components/responses/DMPNotFoundResponse"
+        406:
+          $ref: "#/components/responses/NotAcceptableResponse"
+        409:
+          $ref: "#/components/responses/ConflictResponse"
         default:
-          description: Unexpected error
+          $ref: "#/components/responses/GenericErrorResponse"
 components:
+  responses:
+    DMPListResponse:
+      description: "A list of DMPs"
+      content:
+        application/vnd.org.rd-alliance.dmp-common.v1.2+json:
+          schema:
+            $ref: "#/components/schemas/DMPListResponseBody"
+        application/json:
+          schema:
+            $ref: "#/components/schemas/DMPListResponseBody"
+    AuthenticationRequiredResponse:
+      description: |
+        Authentication required to delete the DMP. The implementation should always return this error code for
+        unauthenticated users as deletion always requires authentication.
+      content:
+        application/vnd.org.rd-alliance.dmp-common.v1.2+json:
+          schema:
+            $ref: "#/components/schemas/AuthenticationRequiredError"
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AuthenticationRequiredError"
+    BadRequestResponse:
+      description: Bad request
+      content:
+        application/vnd.org.rd-alliance.dmp-common.v1.2+json:
+          schema:
+            $ref: '#/components/schemas/BadRequestError'
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BadRequestError'
+    ConflictResponse:
+      description: |
+        A precondition specified in the If-Unmodified-Since or If-Match header cannot be
+        fulfilled. The client should apply the modifications again and resubmit the request.
+      content:
+        application/vnd.org.rd-alliance.dmp-common.v1.2+json:
+          schema:
+            $ref: "#/components/schemas/ConflictError"
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ConflictError"
+    DMPNotFoundResponse:
+      description: |
+        DMP not found or not enough permissions to delete the specified DMP.
+        Security note: implementations may return this error code even if the DMP exists but the authenticated user
+        has no permissions to view it in order to avoid leaking information about the existence of a DMP. This may
+        especially be important if the DMP tool uses numeric IDs to avoid enabling an enumeration of possible DMP
+        IDs.
+      content:
+        application/vnd.org.rd-alliance.dmp-common.v1.2+json:
+          schema:
+            $ref: "#/components/schemas/DMPNotFoundError"
+        application/json:
+          schema:
+            $ref: "#/components/schemas/DMPNotFoundError"
+    GenericErrorResponse:
+      description: The request failed
+      content:
+        application/vnd.org.rd-alliance.dmp-common.v1.2+json:
+          schema:
+            $ref: "#/components/schemas/GenericError"
+        application/json:
+          schema:
+            $ref: "#/components/schemas/GenericError"
+    InsufficientPermissionsResponse:
+      description: |
+        Insufficient permissions to delete the specified a DMP.
+        Note: the implementation may opt to return a 404 instead to avoid leaking information about the
+        existence of a DMP with the specified ID if the user has no permissions to at least view this DMP. The
+        implementation SHOULD return this error code if the user has at least read permissions for this DMP.
+      content:
+        application/vnd.org.rd-alliance.dmp-common.v1.2+json:
+          schema:
+            $ref: "#/components/schemas/InsufficientPermissionsError"
+        application/json:
+          schema:
+            $ref: "#/components/schemas/InsufficientPermissionsError"
+    NotAcceptableResponse:
+      description: |
+        The server cannot produce a response that the client requested in its `Accept` header.
+      content:
+        application/vnd.org.rd-alliance.dmp-common.v1.2+json:
+          schema:
+            $ref: "#/components/schemas/NotAcceptableError"
+        application/json:
+          schema:
+            $ref: "#/components/schemas/NotAcceptableError"
+    UnsupportedMediaTypeResponse:
+      description: |
+        The server cannot process the request the client because it does not support the DMP standard the client
+        sent the document in.
+      content:
+        application/vnd.org.rd-alliance.dmp-common.v1.2+json:
+          schema:
+            $ref: "#/components/schemas/UnsupportedMediaTypeError"
+        application/json:
+          schema:
+            $ref: "#/components/schemas/UnsupportedMediaTypeError"
   schemas:
-    Order:
-      x-swagger-router-model: io.swagger.petstore.model.Order
+    #region IDs
+
+    DMPSystemID:
+      type: string
+
+    #endregion
+    #region Subordinate objects
+
+    DMPDocument:
       type: object
       properties:
-        id:
-          type: integer
-          format: int64
-          example: 10
-        petId:
-          type: integer
-          format: int64
-          example: 198772
-        quantity:
-          type: integer
-          format: int32
-          example: 7
-        shipDate:
-          type: string
-          format: date-time
-        status:
-          type: string
-          description: Order Status
-          example: approved
-          enum:
-            - placed
-            - approved
-            - delivered
-        complete:
-          type: boolean
-      xml:
-        name: order
-    Category:
-      x-swagger-router-model: io.swagger.petstore.model.Category
+        dmp:
+          $ref: "#/components/schemas/DMPData"
+    DMPWithID:
+      allOf:
+        - $ref: "#/components/schemas/DMPDocument"
+        - type: object
+          required:
+            - id
+          properties:
+            id:
+              title: "ID"
+              description: "A system-dependent identifier for this DMP. The identifier is not valid outside of the current API, use the dmpId field in the DMP object itself it you need a system-independent identifier."
+              $ref: "#/components/schemas/DMPSystemID"
+
+    #endregion
+    #region Non-error responses
+
+    DMPListResponseBody:
       type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-          example: 1
-        name:
-          type: string
-          example: Dogs
-      xml:
-        name: category
-    User:
-      x-swagger-router-model: io.swagger.petstore.model.User
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-          example: 10
-        username:
-          type: string
-          example: theUser
-        firstName:
-          type: string
-          example: John
-        lastName:
-          type: string
-          example: James
-        email:
-          type: string
-          example: john@email.com
-        password:
-          type: string
-          example: '12345'
-        phone:
-          type: string
-          example: '12345'
-        userStatus:
-          type: integer
-          description: User Status
-          format: int32
-          example: 1
-      xml:
-        name: user
-    Tag:
-      x-swagger-router-model: io.swagger.petstore.model.Tag
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-        name:
-          type: string
-      xml:
-        name: tag
-    Pet:
-      x-swagger-router-model: io.swagger.petstore.model.Pet
       required:
-        - name
-        - photoUrls
+        - total_count
+        - items
+      properties:
+        total_count:
+          type: integer
+          minimum: 0
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DMPWithID"
+
+    #endregion
+    #region Error responses
+
+    Error:
+      title: "Abstract error"
+      type: object
+      required:
+        - error_code
+        - error_message
+      properties:
+        error_code:
+          title: Error code
+          type: string
+        error_message:
+          title: Error message
+          description: A description of the error in English.
+          type: string
+    AuthenticationRequiredError:
+      title: "Authentication required"
+      description: Authentication required to perform the specified request.
+      allOf:
+        - $ref: "#/components/schemas/Error"
+        - type: object
+          required:
+            - error_code
+          properties:
+            error_code:
+              title: Error code
+              type: string
+              const: "authentication_required"
+    InsufficientPermissionsError:
+      title: "Insufficient permissions"
+      description: The current user has insufficient permissions to perform this action.
+      allOf:
+        - $ref: "#/components/schemas/Error"
+        - type: object
+          required:
+            - error_code
+          properties:
+            error_code:
+              title: Error code
+              type: string
+              const: "insufficient_permissions"
+    NotAcceptableError:
+      title: "Cannot meet Accept requirements"
+      description: The client has requested a DMP standard that the server cannot fulfill.
+      allOf:
+        - $ref: "#/components/schemas/Error"
+        - type: object
+          required:
+            - error_code
+          properties:
+            error_code:
+              title: Error code
+              type: string
+              const: "not_acceptable"
+    UnsupportedMediaTypeError:
+      title: "Unsupported DMP standard"
+      description: The server cannot process the DMP sent by the client because it does not support th especified MIME type.
+      allOf:
+        - $ref: "#/components/schemas/Error"
+        - type: object
+          required:
+            - error_code
+          properties:
+            error_code:
+              title: Error code
+              type: string
+              const: "unsupported_media_type"
+    DMPAlreadyExistsError:
+      title: "DMP already exists"
+      description: |
+        The DMP system has identified this DMP to be already present in the system based on its DMP ID or other
+        characteristics. The error response SHOULD contain the existing DMP ID.
+      allOf:
+        - $ref: "#/components/schemas/Error"
+        - type: object
+          required:
+            - error_code
+          properties:
+            error_code:
+              title: Error code
+              type: string
+              const: "dmp_already_exists"
+    DMPNotFoundError:
+      title: "DMP not found / insufficient permissions to access DMP"
+      description: |
+        This error can mean two things: either the specified DMP does not exist, or the implementation has chosen to
+        return a 404 error instead of a 401 or 403 to avoid leaking information about the existence of a DMP. If the
+        requester is not authenticated, the request may be retried after authentication to possibly retrieve the DMP.
+      allOf:
+        - $ref: "#/components/schemas/Error"
+        - type: object
+          required:
+            - error_code
+          properties:
+            error_code:
+              title: Error code
+              type: string
+              const: "dmp_not_found"
+    InvalidQueryStringError:
+      title: "Invalid query string"
+      description: |
+        The passed query string for a list request was invalid.
+      allOf:
+        - $ref: "#/components/schemas/Error"
+        - type: object
+          required:
+            - error_code
+          properties:
+            error_code:
+              title: Error code
+              type: string
+              const: "invalid_query_string"
+    ConflictError:
+      title: "Conflict"
+      description: |
+        The server failed to apply the patch because a JSON Patch test failed. If the patch applies successfully, but
+        results in an invalid DMP, an DMPInvalidResponse (400) is returned instead.
+      allOf:
+        - $ref: "#/components/schemas/Error"
+        - type: object
+          required:
+            - error_code
+          properties:
+            error_code:
+              title: Error code
+              type: string
+              const: "conflict"
+    BadRequestError:
+      title: "Bad request"
+      description: "The passed HTTP request was invalid."
+      oneOf:
+        - $ref: "#/components/schemas/InvalidQueryStringError"
+        - $ref: "#/components/schemas/DMPInvalidError"
+        - $ref: "#/components/schemas/GenericBadRequestError"
+      discriminator:
+        propertyName: error_code
+        mapping:
+          invalid_query_string: "#/components/schemas/InvalidQueryStringError"
+          invalid_dmp: "#/components/schemas/DMPInvalidError"
+          bad_request: "#/components/schemas/GenericBadRequestError"
+    GenericBadRequestError:
+      title: "Bad request"
+      description: "The request the client sent is invalid."
+      allOf:
+        - $ref: "#/components/schemas/Error"
+        - type: object
+          required:
+            - error_code
+          properties:
+            error_code:
+              title: Error code
+              type: string
+              const: "bad_request"
+    DMPInvalidError:
+      title: "Invalid DMP"
+      description: "The passed DMP was invalid"
+      allOf:
+        - $ref: "#/components/schemas/Error"
+        - type: object
+          required:
+            - error_code
+          properties:
+            error_code:
+              title: Error code
+              type: string
+              const: "dmp_invalid"
+    GenericError:
+      title: "Generic error"
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/Error"
+        - type: object
+          required:
+            - error_code
+          properties:
+            error_code:
+              title: Error code
+              type: string
+              const: "generic_error"
+
+    #endregion
+    #region Common DMP format
+    DMP:
       type: object
       properties:
-        id:
-          type: integer
-          format: int64
-          example: 10
+        dmp:
+          $ref: "#/components/schemas/DMPData"
+    Booleanish:
+      type: string
+      enum:
+        - 'yes'
+        - 'no'
+        - unknown
+      title: The DMP Ethical Issues Exist Schema
+      description: >-
+        To indicate whether there are ethical issues related to data that this DMP
+        describes. Allowed values: yes, no, unknown
+      examples:
+        - 'yes'
+    Certification:
+      type: string
+      enum:
+        - din31644
+        - dini-zertifikat
+        - dsa
+        - iso16363
+        - iso16919
+        - trac
+        - wds
+        - coretrustseal
+      title: The Dataset Distribution Host Certification Type Schema
+      description: >-
+        Repository certified to a recognised standard. Allowed values: din31644,
+        dini-zertifikat, dsa, iso16363, iso16919, trac, wds, coretrustseal
+      examples:
+        - coretrustseal
+    Contact:
+      type: object
+      title: The DMP Contact Schema
+      properties:
+        contact_id:
+          $ref: '#/components/schemas/ContactID'
+        mbox:
+          type: string
+          format: email
+          title: The Mailbox Schema
+          description: Contact Person's E-mail address
+          examples:
+            - cc@example.com
         name:
           type: string
-          example: doggie
-        category:
-          $ref: '#/components/schemas/Category'
-        photoUrls:
+          title: The Name Schema
+          description: Name of the contact person
+          examples:
+            - Charlie Chaplin
+      required:
+        - contact_id
+        - mbox
+        - name
+    Contributor:
+      type: object
+      title: The Contributor Items Schema
+      properties:
+        contributor_id:
+          $ref: '#/components/schemas/ContributorID'
+        mbox:
+          type: string
+          title: The Contributor Mailbox Schema
+          description: Contributor Mail address
+          examples:
+            - john@smith.com
+          format: email
+        name:
+          type: string
+          title: The Name Schema
+          description: Name of the contributor
+          examples:
+            - John Smith
+        role:
+          $ref: '#/components/schemas/ContributorRoles'
+      required:
+        - contributor_id
+        - name
+        - role
+    ContributorID:
+      type: object
+      title: The Contributor ID Schema
+      properties:
+        identifier:
+          $ref: '#/components/schemas/ContributorIDValue'
+        type:
+          $ref: '#/components/schemas/ContributorIDType'
+      required:
+        - identifier
+        - type
+    ContributorIDType:
+      type: string
+      enum:
+        - orcid
+        - isni
+        - openid
+        - other
+      title: The DMP Contact Identifier Type Schema
+      description: 'Identifier type. Allowed values: orcid, isni, openid, other'
+      examples:
+        - orcid
+    ContributorIDValue:
+      type: string
+      title: The DMP Contributor Identifier Schema
+      examples:
+        - 'https://orcid.org/0000-0003-0644-4174'
+    ContributorRole:
+      type: string
+      title: The Contributor Role(s) Items Schema
+      examples:
+        - Data Steward
+    ContributorRoles:
+      type: array
+      title: The Role Schema
+      description: Type of contributor
+      items:
+        $ref: '#/components/schemas/ContributorRole'
+      uniqueItems: true
+    Contributors:
+      type: array
+      title: The Contributor Schema
+      items:
+        $ref: '#/components/schemas/Contributor'
+    ContactID:
+      type: object
+      title: The Contact ID Schema
+      properties:
+        identifier:
+          $ref: '#/components/schemas/ContactIDValue'
+        type:
+          $ref: '#/components/schemas/ContactIDType'
+      required:
+        - identifier
+        - type
+    ContactIDType:
+      type: string
+      enum:
+        - orcid
+        - isni
+        - openid
+        - other
+      title: The DMP Contact Identifier Type Schema
+      description: 'Identifier type. Allowed values: orcid, isni, openid, other'
+      examples:
+        - orcid
+    ContactIDValue:
+      type: string
+      title: The DMP Contact Identifier Schema
+      examples:
+        - 'https://orcid.org/0000-0003-0644-4174'
+    Cost:
+      type: object
+      title: The Cost Items Schema
+      properties:
+        currency_code:
+          $ref: '#/components/schemas/CurrencyCode'
+        description:
+          type: string
+          title: The Cost Description Schema
+          description: Cost(s) Description
+          examples:
+            - Costs for maintaining...
+        title:
+          type: string
+          title: The Cost Title Schema
+          description: Title
+          examples:
+            - Storage and Backup
+        value:
+          type: number
+          title: The Cost Value Schema
+          description: Value
+          examples:
+            - 1000
+      required:
+        - title
+    Costs:
+      type: array
+      title: The Cost Schema
+      items:
+        $ref: '#/components/schemas/Cost'
+    CurrencyCode:
+      type: string
+      enum:
+        - AED
+        - AFN
+        - ALL
+        - AMD
+        - ANG
+        - AOA
+        - ARS
+        - AUD
+        - AWG
+        - AZN
+        - BAM
+        - BBD
+        - BDT
+        - BGN
+        - BHD
+        - BIF
+        - BMD
+        - BND
+        - BOB
+        - BRL
+        - BSD
+        - BTN
+        - BWP
+        - BYN
+        - BZD
+        - CAD
+        - CDF
+        - CHF
+        - CLP
+        - CNY
+        - COP
+        - CRC
+        - CUC
+        - CUP
+        - CVE
+        - CZK
+        - DJF
+        - DKK
+        - DOP
+        - DZD
+        - EGP
+        - ERN
+        - ETB
+        - EUR
+        - FJD
+        - FKP
+        - GBP
+        - GEL
+        - GGP
+        - GHS
+        - GIP
+        - GMD
+        - GNF
+        - GTQ
+        - GYD
+        - HKD
+        - HNL
+        - HRK
+        - HTG
+        - HUF
+        - IDR
+        - ILS
+        - IMP
+        - INR
+        - IQD
+        - IRR
+        - ISK
+        - JEP
+        - JMD
+        - JOD
+        - JPY
+        - KES
+        - KGS
+        - KHR
+        - KMF
+        - KPW
+        - KRW
+        - KWD
+        - KYD
+        - KZT
+        - LAK
+        - LBP
+        - LKR
+        - LRD
+        - LSL
+        - LYD
+        - MAD
+        - MDL
+        - MGA
+        - MKD
+        - MMK
+        - MNT
+        - MOP
+        - MRU
+        - MUR
+        - MVR
+        - MWK
+        - MXN
+        - MYR
+        - MZN
+        - NAD
+        - NGN
+        - NIO
+        - NOK
+        - NPR
+        - NZD
+        - OMR
+        - PAB
+        - PEN
+        - PGK
+        - PHP
+        - PKR
+        - PLN
+        - PYG
+        - QAR
+        - RON
+        - RSD
+        - RUB
+        - RWF
+        - SAR
+        - SBD
+        - SCR
+        - SDG
+        - SEK
+        - SGD
+        - SHP
+        - SLL
+        - SOS
+        - SPL*
+        - SRD
+        - STN
+        - SVC
+        - SYP
+        - SZL
+        - THB
+        - TJS
+        - TMT
+        - TND
+        - TOP
+        - TRY
+        - TTD
+        - TVD
+        - TWD
+        - TZS
+        - UAH
+        - UGX
+        - USD
+        - UYU
+        - UZS
+        - VEF
+        - VND
+        - VUV
+        - WST
+        - XAF
+        - XCD
+        - XDR
+        - XOF
+        - XPF
+        - YER
+        - ZAR
+        - ZMW
+        - ZWD
+      title: The Cost Currency Code Schema
+      description: Allowed values defined by ISO 4217
+      examples:
+        - EUR
+    CountryCode:
+      type: string
+      enum:
+        - AD
+        - AE
+        - AF
+        - AG
+        - AI
+        - AL
+        - AM
+        - AO
+        - AQ
+        - AR
+        - AS
+        - AT
+        - AU
+        - AW
+        - AX
+        - AZ
+        - BA
+        - BB
+        - BD
+        - BE
+        - BF
+        - BG
+        - BH
+        - BI
+        - BJ
+        - BL
+        - BM
+        - BN
+        - BO
+        - BQ
+        - BR
+        - BS
+        - BT
+        - BV
+        - BW
+        - BY
+        - BZ
+        - CA
+        - CC
+        - CD
+        - CF
+        - CG
+        - CH
+        - CI
+        - CK
+        - CL
+        - CM
+        - CN
+        - CO
+        - CR
+        - CU
+        - CV
+        - CW
+        - CX
+        - CY
+        - CZ
+        - DE
+        - DJ
+        - DK
+        - DM
+        - DO
+        - DZ
+        - EC
+        - EE
+        - EG
+        - EH
+        - ER
+        - ES
+        - ET
+        - FI
+        - FJ
+        - FK
+        - FM
+        - FO
+        - FR
+        - GA
+        - GB
+        - GD
+        - GE
+        - GF
+        - GG
+        - GH
+        - GI
+        - GL
+        - GM
+        - GN
+        - GP
+        - GQ
+        - GR
+        - GS
+        - GT
+        - GU
+        - GW
+        - GY
+        - HK
+        - HM
+        - HN
+        - HR
+        - HT
+        - HU
+        - ID
+        - IE
+        - IL
+        - IM
+        - IN
+        - IO
+        - IQ
+        - IR
+        - IS
+        - IT
+        - JE
+        - JM
+        - JO
+        - JP
+        - KE
+        - KG
+        - KH
+        - KI
+        - KM
+        - KN
+        - KP
+        - KR
+        - KW
+        - KY
+        - KZ
+        - LA
+        - LB
+        - LC
+        - LI
+        - LK
+        - LR
+        - LS
+        - LT
+        - LU
+        - LV
+        - LY
+        - MA
+        - MC
+        - MD
+        - ME
+        - MF
+        - MG
+        - MH
+        - MK
+        - ML
+        - MM
+        - MN
+        - MO
+        - MP
+        - MQ
+        - MR
+        - MS
+        - MT
+        - MU
+        - MV
+        - MW
+        - MX
+        - MY
+        - MZ
+        - NA
+        - NC
+        - NE
+        - NF
+        - NG
+        - NI
+        - NL
+        - 'NO'
+        - NP
+        - NR
+        - NU
+        - NZ
+        - OM
+        - PA
+        - PE
+        - PF
+        - PG
+        - PH
+        - PK
+        - PL
+        - PM
+        - PN
+        - PR
+        - PS
+        - PT
+        - PW
+        - PY
+        - QA
+        - RE
+        - RO
+        - RS
+        - RU
+        - RW
+        - SA
+        - SB
+        - SC
+        - SD
+        - SE
+        - SG
+        - SH
+        - SI
+        - SJ
+        - SK
+        - SL
+        - SM
+        - SN
+        - SO
+        - SR
+        - SS
+        - ST
+        - SV
+        - SX
+        - SY
+        - SZ
+        - TC
+        - TD
+        - TF
+        - TG
+        - TH
+        - TJ
+        - TK
+        - TL
+        - TM
+        - TN
+        - TO
+        - TR
+        - TT
+        - TV
+        - TW
+        - TZ
+        - UA
+        - UG
+        - UM
+        - US
+        - UY
+        - UZ
+        - VA
+        - VC
+        - VE
+        - VG
+        - VI
+        - VN
+        - VU
+        - WF
+        - WS
+        - YE
+        - YT
+        - ZA
+        - ZM
+        - ZW
+      title: The Dataset Distribution Host Geographical Location Schema
+      description: Physical location of the data expressed using ISO 3166-1 country code.
+      examples:
+        - AT
+    DataAccess:
+      type: string
+      enum:
+        - open
+        - shared
+        - closed
+      title: The Dataset Distribution Data Access Schema
+      description: 'Indicates access mode for data. Allowed values: open, shared, closed'
+      examples:
+        - open
+    Dataset:
+      type: object
+      title: The Dataset Items Schema
+      properties:
+        data_quality_assurance:
           type: array
-          xml:
-            wrapped: true
+          title: The Data Quality Assurance Schema
+          description: Data Quality Assurance
           items:
             type: string
-            xml:
-              name: photoUrl
-        tags:
-          type: array
-          xml:
-            wrapped: true
-          items:
-            $ref: '#/components/schemas/Tag'
-        status:
+            title: The Data Quality Assurance Schema
+            examples:
+              - We use file naming convention...
+        dataset_id:
+          $ref: '#/components/schemas/DatasetID'
+        description:
           type: string
-          description: pet status in the store
+          title: The Dataset Description Schema
+          description: >-
+            Description is a property in both Dataset and Distribution, in
+            compliance with W3C DCAT. In some cases these might be identical, but
+            in most cases the Dataset represents a more abstract concept, while
+            the distribution can point to a specific file.
+          examples:
+            - Field observation
+        distribution:
+          type: array
+          title: The Dataset Distribution Schema
+          description: To provide technical information on a specific instance of data.
+          items:
+            $ref: '#/components/schemas/Distribution'
+        is_reused:
+          type: boolean
+          title: The Dataset Is Reused Schema
+          description: >-
+            Indicates if the dataset is reused, i.e., not produced in project(s)
+            covered by this DMP.
+          examples:
+            - true
+        issued:
+          type: string
+          format: date
+          title: The Dataset Date of Issue Schema
+          description: Issued. Encoded using the relevant ISO 8601 Date compliant string.
+          examples:
+            - '2019-06-30'
+        keyword:
+          type: array
+          title: The Dataset Keyword(s) Schema
+          description: Keywords
+          items:
+            type: string
+            title: The Dataset Keyword Items Schema
+            examples:
+              - 'keyword 1, keyword 2'
+        language:
+          type: string
           enum:
-            - available
-            - pending
-            - sold
-      xml:
-        name: pet
-    ApiResponse:
-      type: object
-      properties:
-        code:
-          type: integer
-          format: int32
+            - aar
+            - abk
+            - afr
+            - aka
+            - amh
+            - ara
+            - arg
+            - asm
+            - ava
+            - ave
+            - aym
+            - aze
+            - bak
+            - bam
+            - bel
+            - ben
+            - bih
+            - bis
+            - bod
+            - bos
+            - bre
+            - bul
+            - cat
+            - ces
+            - cha
+            - che
+            - chu
+            - chv
+            - cor
+            - cos
+            - cre
+            - cym
+            - dan
+            - deu
+            - div
+            - dzo
+            - ell
+            - eng
+            - epo
+            - est
+            - eus
+            - ewe
+            - fao
+            - fas
+            - fij
+            - fin
+            - fra
+            - fry
+            - ful
+            - gla
+            - gle
+            - glg
+            - glv
+            - grn
+            - guj
+            - hat
+            - hau
+            - hbs
+            - heb
+            - her
+            - hin
+            - hmo
+            - hrv
+            - hun
+            - hye
+            - ibo
+            - ido
+            - iii
+            - iku
+            - ile
+            - ina
+            - ind
+            - ipk
+            - isl
+            - ita
+            - jav
+            - jpn
+            - kal
+            - kan
+            - kas
+            - kat
+            - kau
+            - kaz
+            - khm
+            - kik
+            - kin
+            - kir
+            - kom
+            - kon
+            - kor
+            - kua
+            - kur
+            - lao
+            - lat
+            - lav
+            - lim
+            - lin
+            - lit
+            - ltz
+            - lub
+            - lug
+            - mah
+            - mal
+            - mar
+            - mkd
+            - mlg
+            - mlt
+            - mon
+            - mri
+            - msa
+            - mya
+            - nau
+            - nav
+            - nbl
+            - nde
+            - ndo
+            - nep
+            - nld
+            - nno
+            - nob
+            - nor
+            - nya
+            - oci
+            - oji
+            - ori
+            - orm
+            - oss
+            - pan
+            - pli
+            - pol
+            - por
+            - pus
+            - que
+            - roh
+            - ron
+            - run
+            - rus
+            - sag
+            - san
+            - sin
+            - slk
+            - slv
+            - sme
+            - smo
+            - sna
+            - snd
+            - som
+            - sot
+            - spa
+            - sqi
+            - srd
+            - srp
+            - ssw
+            - sun
+            - swa
+            - swe
+            - tah
+            - tam
+            - tat
+            - tel
+            - tgk
+            - tgl
+            - tha
+            - tir
+            - ton
+            - tsn
+            - tso
+            - tuk
+            - tur
+            - twi
+            - uig
+            - ukr
+            - urd
+            - uzb
+            - ven
+            - vie
+            - vol
+            - wln
+            - wol
+            - xho
+            - yid
+            - yor
+            - zha
+            - zho
+            - zul
+          title: The Dataset Language Schema
+          description: Language of the dataset expressed using ISO 639-3.
+          examples:
+            - eng
+        metadata:
+          type: array
+          title: The Dataset Metadata Schema
+          description: To describe metadata standards used.
+          items:
+            $ref: '#/components/schemas/Metadata'
+        personal_data:
+          type: string
+          enum:
+            - 'yes'
+            - 'no'
+            - unknown
+          title: The Dataset Personal Data Schema
+          description: 'If any personal data is contained. Allowed values: yes, no, unknown'
+          examples:
+            - unknown
+        preservation_statement:
+          type: string
+          title: The Dataset Preservation Statement Schema
+          description: Preservation Statement
+          examples:
+            - Must be preserved to enable...
+        security_and_privacy:
+          $ref: "#/components/schemas/SecurityAndPrivacyItems"
+        sensitive_data:
+          type: string
+          enum:
+            - 'yes'
+            - 'no'
+            - unknown
+          title: The Dataset Sensitive Data Schema
+          description: 'If any sensitive data is contained. Allowed values: yes, no, unknown'
+          examples:
+            - unknown
+        technical_resource:
+          $ref: "#/components/schemas/TechnicalResources"
+        title:
+          type: string
+          title: The Dataset Title Schema
+          description: >-
+            Title is a property in both Dataset and Distribution, in compliance
+            with W3C DCAT. In some cases these might be identical, but in most
+            cases the Dataset represents a more abstract concept, while the
+            distribution can point to a specific file.
+          examples:
+            - Fast car images
         type:
           type: string
-        message:
+          title: The Dataset Type Schema
+          description: >-
+            If appropriate, type according to: DataCite and/or COAR dictionary.
+            Otherwise use the common name for the type, e.g. raw data, software,
+            survey, etc.
+            https://schema.datacite.org/meta/kernel-4.1/doc/DataCite-MetadataKernel_v4.1.pdf
+            http://vocabularies.coar-repositories.org/pubby/resource_type.html
+          examples:
+            - image
+      required:
+        - dataset_id
+        - personal_data
+        - sensitive_data
+        - title
+    DatasetID:
+      type: object
+      title: The Dataset ID Schema
+      description: Dataset ID
+      properties:
+        identifier:
+          $ref: '#/components/schemas/DatasetIDValue'
+        type:
+          $ref: '#/components/schemas/DatasetIDType'
+      required:
+        - identifier
+        - type
+    Datasets:
+      type: array
+      title: The Dataset Schema
+      items:
+        $ref: '#/components/schemas/Dataset'
+    DatasetIDType:
+      type: string
+      enum:
+        - handle
+        - doi
+        - ark
+        - url
+        - other
+      title: The Dataset Identifier Type Schema
+      description: 'Dataset identifier type. Allowed values: handle, doi, ark, url, other'
+      examples:
+        - handle
+    DatasetIDValue:
+      type: string
+      title: The Dataset Identifier Schema
+      description: Identifier for a dataset
+      examples:
+        - 'https://hdl.handle.net/11353/10.923628'
+    DMPData:
+      type: object
+      title: The DMP Schema
+      properties:
+        contact:
+          $ref: '#/components/schemas/Contact'
+        contributor:
+          $ref: '#/components/schemas/Contributors'
+        cost:
+          $ref: '#/components/schemas/Costs'
+        created:
           type: string
-      xml:
-        name: '##default'
-  requestBodies:
-    Pet:
-      description: Pet object that needs to be added to the store
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Pet'
-        application/xml:
-          schema:
-            $ref: '#/components/schemas/Pet'
-    UserArray:
-      description: List of user object
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/User'
-  securitySchemes:
-    petstore_auth:
-      type: oauth2
-      flows:
-        implicit:
-          authorizationUrl: https://petstore3.swagger.io/oauth/authorize
-          scopes:
-            "write:pets": modify pets in your account
-            "read:pets": read your pets
-    api_key:
-      type: apiKey
-      name: api_key
-      in: header
+          format: date-time
+          title: The DMP Creation Schema
+          description: >-
+            Date and time of the first version of a DMP. Must not be changed in
+            subsequent DMPs. Encoded using the relevant ISO 8601 Date and Time
+            (with timezone) compliant string
+          examples:
+            - '2019-03-13T13:13:00Z'
+        dataset:
+          $ref: '#/components/schemas/Datasets'
+        description:
+          type: string
+          title: The DMP Description Schema
+          description: To provide any free-form text information on a DMP
+          examples:
+            - This DMP is for our new project
+        dmp_id:
+          $ref: '#/components/schemas/DMPID'
+        ethical_issues_description:
+          type: string
+          title: The DMP Ethical Issues Description Schema
+          description: To describe ethical issues directly in a DMP
+          examples:
+            - 'There are ethical issues, because...'
+        ethical_issues_exist:
+          $ref: '#/components/schemas/Booleanish'
+        ethical_issues_report:
+          type: string
+          format: url
+          title: The DMP Ethical Issues Report Schema
+          description: >-
+            To indicate where a protocol from a meeting with an ethical commitee
+            can be found
+          examples:
+            - 'http://report.location'
+        language:
+          $ref: '#/components/schemas/LanguageID'
+        modified:
+          type: string
+          format: date-time
+          title: The DMP Modification Schema
+          description: >-
+            Must be set each time DMP is modified. Indicates DMP version. Encoded
+            using the relevant ISO 8601 Date and Time (with timezone) compliant
+            string.
+          examples:
+            - '2020-03-14T10:53:49Z'
+        project:
+          type: array
+          title: The DMP Project Schema
+          description: Project related to a DMP
+          items:
+            $ref: '#/components/schemas/Project'
+        title:
+          type: string
+          title: The DMP Title Schema
+          description: Title of a DMP
+          examples:
+            - DMP for our new project
+      required:
+        - contact
+        - created
+        - dataset
+        - dmp_id
+        - ethical_issues_exist
+        - language
+        - modified
+        - title
+    DMPID:
+      type: object
+      title: The DMP Identifier Schema
+      description: Identifier for the DMP itself
+      properties:
+        identifier:
+          $ref: '#/components/schemas/DMPIDValue'
+        type:
+          $ref: '#/components/schemas/DMPIDType'
+      required:
+        - identifier
+        - type
+    DMPIDType:
+      type: string
+      enum:
+        - handle
+        - doi
+        - ark
+        - url
+        - other
+      title: The DMP Identifier Type Schema
+      description: 'The DMP Identifier Type. Allowed values: handle, doi, ark, url, other'
+      examples:
+        - doi
+    DMPIDValue:
+      type: string
+      title: The DMP Identifier Value Schema
+      description: Identifier for a DMP
+      examples:
+        - 'https://doi.org/10.1371/journal.pcbi.1006750'
+    Distribution:
+      type: object
+      title: The Dataset Distribution Items Schema
+      properties:
+        access_url:
+          type: string
+          title: The Dataset Distribution Access URL Schema
+          description: >-
+            A URL of the resource that gives access to a distribution of the
+            dataset. e.g. landing page.
+          examples:
+            - 'http://some.repo'
+        available_until:
+          type: string
+          format: date
+          title: The Dataset Distribution Available Until Schema
+          description: >-
+            Indicates how long this distribution will be/ should be available.
+            Encoded using the relevant ISO 8601 Date compliant string.
+          examples:
+            - '2030-06-30'
+        byte_size:
+          type: integer
+          title: The Dataset Distribution Byte Size Schema
+          description: Size in bytes.
+          examples:
+            - 690000
+        data_access:
+          $ref: '#/components/schemas/DataAccess'
+        description:
+          type: string
+          title: The Dataset Distribution Description Schema
+          description: >-
+            Description is a property in both Dataset and Distribution, in
+            compliance with W3C DCAT. In some cases these might be identical, but
+            in most cases the Dataset represents a more abstract concept, while
+            the distribution can point to a specific file.
+          examples:
+            - Best quality data before resizing
+        download_url:
+          type: string
+          format: url
+          title: The Dataset Distribution Download URL Schema
+          description: >-
+            The URL of the downloadable file in a given format. E.g. CSV file or
+            RDF file.
+          examples:
+            - 'http://some.repo.../download/...'
+        format:
+          type: array
+          title: The Dataset Distribution Format Schema
+          description: >-
+            Format according to:
+            https://www.iana.org/assignments/media-types/media-types.xhtml if
+            appropriate, otherwise use the common name for this format.
+          items:
+            $ref: '#/components/schemas/MIMEType'
+        host:
+          $ref: '#/components/schemas/Host'
+        license:
+          $ref: '#/components/schemas/Licenses'
+        title:
+          type: string
+          title: The Dataset Distribution Title Schema
+          description: >-
+            Title is a property in both Dataset and Distribution, in compliance
+            with W3C DCAT. In some cases these might be identical, but in most
+            cases the Dataset represents a more abstract concept, while the
+            distribution can point to a specific file.
+          examples:
+            - Full resolution images
+      required:
+        - data_access
+        - title
+    FunderID:
+      type: object
+      title: The Funder ID Schema
+      description: Funder ID of the associated project
+      properties:
+        identifier:
+          $ref: '#/components/schemas/FunderIDValue'
+        type:
+          $ref: '#/components/schemas/FunderIDType'
+      required:
+        - identifier
+        - type
+    FunderIDType:
+      type: string
+      enum:
+        - fundref
+        - url
+        - other
+      title: The Funder ID Type Schema
+      description: 'Identifier type. Allowed values: fundref, url, other'
+      examples:
+        - fundref
+    FunderIDValue:
+      type: string
+      title: The Funder ID Value Schema
+      description: >-
+        Funder ID, recommended to use CrossRef Funder Registry. See:
+        https://www.crossref.org/services/funder-registry/
+      examples:
+        - '501100002428'
+    FundingStatus:
+      type: string
+      enum:
+        - planned
+        - applied
+        - granted
+        - rejected
+      title: The Funding Status Schema
+      description: >-
+        To express different phases of project lifecycle. Allowed values: planned,
+        applied, granted, rejected
+      examples:
+        - granted
+    Funding:
+      type: object
+      title: The DMP Project Funding Items Schema
+      properties:
+        funder_id:
+          $ref: '#/components/schemas/FunderID'
+        funding_status:
+          $ref: '#/components/schemas/FundingStatus'
+        grant_id:
+          $ref: '#/components/schemas/GrantID'
+      required:
+        - funder_id
+    Fundings:
+      type: array
+      title: The DMP Project Funding Schema
+      description: Funding related with a project
+      items:
+        $ref: '#/components/schemas/Funding'
+    GrantID:
+      type: object
+      title: The Funding Grant ID Schema
+      description: Grant ID of the associated project
+      properties:
+        identifier:
+          $ref: '#/components/schemas/GrantIDValue'
+        type:
+          $ref: '#/components/schemas/GrantIDType'
+      required:
+        - identifier
+        - type
+    GrantIDType:
+      type: string
+      title: The Funding Grant ID Type Schema
+      enum:
+        - url
+        - other
+      description: 'Identifier type. Allowed values: url, other'
+      examples:
+        - other
+    GrantIDValue:
+      type: string
+      title: The Funding Grant ID Value Schema
+      description: Grant ID
+      examples:
+        - '776242'
+    Host:
+      type: object
+      title: The Dataset Distribution Host Schema
+      description: >-
+        To provide information on quality of service provided by infrastructure
+        (e.g. repository) where data is stored.
+      properties:
+        availability:
+          type: string
+          title: The Dataset Distribution Host Availability Schema
+          description: Availability
+          examples:
+            - '99,5'
+        backup_frequency:
+          type: string
+          title: The Dataset Distribution Host Backup Frequency Schema
+          description: Backup Frequency
+          examples:
+            - weekly
+        backup_type:
+          type: string
+          title: The Dataset Distribution Host Backup Type Schema
+          description: Backup Type
+          examples:
+            - tapes
+        certified_with:
+          $ref: '#/components/schemas/Certification'
+        description:
+          type: string
+          title: The Dataset Distribution Host Description Schema
+          description: Description
+          examples:
+            - Repository hosted by...
+        geo_location:
+          $ref: '#/components/schemas/CountryCode'
+        pid_system:
+          $ref: '#/components/schemas/PidSystems'
+        storage_type:
+          type: string
+          title: The Dataset Distribution Host Storage Type Schema
+          description: The type of storage required
+          examples:
+            - External Hard Drive
+        support_versioning:
+          $ref: '#/components/schemas/Booleanish'
+        title:
+          type: string
+          title: The Dataset Distribution Host Title Schema
+          description: Title
+          examples:
+            - Super Repository
+        url:
+          type: string
+          format: url
+          title: The Dataset Distribution Host URL Schema
+          description: The URL of the system hosting a distribution of a dataset
+          examples:
+            - 'https://zenodo.org'
+      required:
+        - title
+        - url
+    MIMEType:
+      type: string
+      title: The Dataset Distribution Format Items Schema
+      examples:
+        - image/tiff
+    LanguageID:
+      type: string
+      enum:
+        - aar
+        - abk
+        - afr
+        - aka
+        - amh
+        - ara
+        - arg
+        - asm
+        - ava
+        - ave
+        - aym
+        - aze
+        - bak
+        - bam
+        - bel
+        - ben
+        - bih
+        - bis
+        - bod
+        - bos
+        - bre
+        - bul
+        - cat
+        - ces
+        - cha
+        - che
+        - chu
+        - chv
+        - cor
+        - cos
+        - cre
+        - cym
+        - dan
+        - deu
+        - div
+        - dzo
+        - ell
+        - eng
+        - epo
+        - est
+        - eus
+        - ewe
+        - fao
+        - fas
+        - fij
+        - fin
+        - fra
+        - fry
+        - ful
+        - gla
+        - gle
+        - glg
+        - glv
+        - grn
+        - guj
+        - hat
+        - hau
+        - hbs
+        - heb
+        - her
+        - hin
+        - hmo
+        - hrv
+        - hun
+        - hye
+        - ibo
+        - ido
+        - iii
+        - iku
+        - ile
+        - ina
+        - ind
+        - ipk
+        - isl
+        - ita
+        - jav
+        - jpn
+        - kal
+        - kan
+        - kas
+        - kat
+        - kau
+        - kaz
+        - khm
+        - kik
+        - kin
+        - kir
+        - kom
+        - kon
+        - kor
+        - kua
+        - kur
+        - lao
+        - lat
+        - lav
+        - lim
+        - lin
+        - lit
+        - ltz
+        - lub
+        - lug
+        - mah
+        - mal
+        - mar
+        - mkd
+        - mlg
+        - mlt
+        - mon
+        - mri
+        - msa
+        - mya
+        - nau
+        - nav
+        - nbl
+        - nde
+        - ndo
+        - nep
+        - nld
+        - nno
+        - nob
+        - nor
+        - nya
+        - oci
+        - oji
+        - ori
+        - orm
+        - oss
+        - pan
+        - pli
+        - pol
+        - por
+        - pus
+        - que
+        - roh
+        - ron
+        - run
+        - rus
+        - sag
+        - san
+        - sin
+        - slk
+        - slv
+        - sme
+        - smo
+        - sna
+        - snd
+        - som
+        - sot
+        - spa
+        - sqi
+        - srd
+        - srp
+        - ssw
+        - sun
+        - swa
+        - swe
+        - tah
+        - tam
+        - tat
+        - tel
+        - tgk
+        - tgl
+        - tha
+        - tir
+        - ton
+        - tsn
+        - tso
+        - tuk
+        - tur
+        - twi
+        - uig
+        - ukr
+        - urd
+        - uzb
+        - ven
+        - vie
+        - vol
+        - wln
+        - wol
+        - xho
+        - yid
+        - yor
+        - zha
+        - zho
+        - zul
+      title: The Dataset Metadata Language Schema
+      description: Language of the metadata expressed using ISO 639-3.
+      examples:
+        - eng
+    License:
+      type: object
+      title: The Dataset Distribution License Items
+      properties:
+        license_ref:
+          type: string
+          format: url
+          title: The Dataset Distribution License Reference Schema
+          description: Link to license document.
+          examples:
+            - 'https://creativecommons.org/licenses/by/4.0/'
+        start_date:
+          type: string
+          format: date
+          title: The Dataset Distribution License Start Date Schema
+          description: >-
+            If date is set in the future, it indicates embargo period. Encoded
+            using the relevant ISO 8601 Date compliant string.
+          examples:
+            - '2019-06-30'
+      required:
+        - license_ref
+        - start_date
+    Licenses:
+      type: array
+      title: The Dataset Distribution License(s) Schema
+      description: To list all licenses applied to a specific distribution of data.
+      items:
+        $ref: '#/components/schemas/License'
+    Metadata:
+      type: object
+      title: The Dataset Metadata Items Schema
+      properties:
+        description:
+          type: string
+          title: The Dataset Metadata Description Schema
+          description: Description
+          examples:
+            - Provides taxonomy for...
+        language:
+          $ref: '#/components/schemas/LanguageID'
+        metadata_standard_id:
+          $ref: '#/components/schemas/MetadataStandardID'
+      required:
+        - language
+        - metadata_standard_id
+    MetadataStandardID:
+      type: object
+      title: The Dataset Metadata Standard ID Schema
+      properties:
+        identifier:
+          $ref: '#/components/schemas/MetadataStandardIDValue'
+        type:
+          $ref: '#/components/schemas/MetadataStandardIDType'
+      required:
+        - identifier
+        - type
+    MetadataStandardIDType:
+      type: string
+      enum:
+        - url
+        - other
+      title: The Dataset Metadata Standard Identifier Type Schema
+      description: 'Identifier type. Allowed values: url, other'
+      examples:
+        - url
+    MetadataStandardIDValue:
+      type: string
+      title: The Dataset Metadata Standard Identifier Value Schema
+      description: Identifier for the metadata standard used.
+      examples:
+        - 'http://www.dublincore.org/specifications/dublin-core/dcmi-terms/'
+    PidSystems:
+      type: array
+      title: The Dataset Distribution Host PID System Schema
+      description: >-
+        PID system(s). Allowed values: ark, arxiv, bibcode, doi, ean13, eissn,
+        handle, igsn, isbn, issn, istc, lissn, lsid, pmid, purl, upc, url, urn,
+        other
+      items:
+        $ref: '#/components/schemas/PidSystemType'
+    PidSystemType:
+      type: string
+      title: The Dataset Distribution Host PID System Items Schema
+      enum:
+        - ark
+        - arxiv
+        - bibcode
+        - doi
+        - ean13
+        - eissn
+        - handle
+        - igsn
+        - isbn
+        - issn
+        - istc
+        - lissn
+        - lsid
+        - pmid
+        - purl
+        - upc
+        - url
+        - urn
+        - other
+      examples:
+        - doi
+    Project:
+      type: object
+      title: The DMP Project Items Schema
+      properties:
+        description:
+          type: string
+          title: The DMP Project Description Schema
+          description: Project description
+          examples:
+            - Project develops novel...
+        end:
+          type: string
+          format: date
+          title: The DMP Project End Date Schema
+          description: >-
+            Project end date. Encoded using the relevant ISO 8601 Date compliant
+            string.
+          examples:
+            - '2020-03-31'
+        funding:
+          $ref: '#/components/schemas/Fundings'
+        start:
+          type: string
+          format: date
+          title: The DMP Project Start Date Schema
+          description: >-
+            Project start date. Encoded using the relevant ISO 8601 Date compliant
+            string.
+          examples:
+            - '2019-04-01'
+        title:
+          type: string
+          title: The DMP Project Title Schema
+          description: Project title
+          examples:
+            - Our New Project
+      required:
+        - title
+    SecurityAndPrivacyItem:
+      type: object
+      title: The Dataset Security & Policy Items Schema
+      properties:
+        description:
+          type: string
+          title: The Dataset Security & Policy Description Schema
+          description: Description
+          examples:
+            - Server with data must be kept in a locked room
+        title:
+          type: string
+          title: The Dataset Security & Policy Title Schema
+          description: Title
+          examples:
+            - Physical access control
+      required:
+        - title
+    SecurityAndPrivacyItems:
+      type: array
+      title: The Dataset Security and Policy Schema
+      description: To list all issues and requirements related to security and privacy
+      items:
+        $ref: "#/components/schemas/SecurityAndPrivacyItem"
+    TechnicalResource:
+      type: object
+      title: The Dataset Technical Resource Items Schema
+      properties:
+        description:
+          type: string
+          title: The Dataset Technical Resource Description Schema
+          description: Description of the technical resource
+          examples:
+            - Device needed to collect field data...
+        name:
+          type: string
+          title: The Dataset Technical Resource Name Schema
+          description: Name of the technical resource
+          examples:
+            - 123/45/43/AT
+      required:
+        - name
+    TechnicalResources:
+      type: array
+      title: The Dataset Technical Resource Schema
+      description: To list all technical resources needed to implement a DMP
+      items:
+        $ref: "#/components/schemas/TechnicalResource"
+
+    #endregion
