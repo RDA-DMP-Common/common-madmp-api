@@ -6,22 +6,57 @@ info:
     automated analysis or other integration. Please note that this API may not give you all information stored in the
     system implementing it as this standard is intended as a common baseline among multiple DMP platform vendors.
 
+    # Schema extension
+
+    This API supports extending the standard by using content negotiation. The MIME types used for content negotiation
+    *should* follow the vendor tree naming defined in
+    [RFC 6838 Section 3.2](https://datatracker.ietf.org/doc/html/rfc6838#section-3.2) and make use of the media type
+    suffixes defined in [RFC6839](https://www.rfc-editor.org/rfc/rfc6839). The vendor prefix should be chosen such that
+    the vendor is clearly identifiable. For example:
+
+    ```
+    application/vnd.com.example.dmp+json
+    ```
+
+    Clients *should* send an `Accept` header with their preferred MIME types. The server *must* order the contents of
+    the `Accept` header correctly and select the standard with the highest client preference.
+    (See the [MDN docs](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Accept) for a detailed
+    explanation on this header.)
+
+    If the client sends no `Accept` header or sends an unqualified `application/json` request, the server *may* select
+    the "stock" schema represented in this document or may select an extended schema only if the extended schema fully
+    adheres to this standard with only extra added fields, but no existing fields removed or modified. In this case, the
+    server *must* respond with the `application/json` content type. Clients *should* not rely on receiving an extended
+    schema document when sending an `application/json` request and *should* prefer sending a qualified MIME type.
+
+    The correct MIME-type for the DMP standard used in this specification is:
+
+    ```
+    application/vnd.org.rd-alliance.dmp-common.v1.2+json
+    ```
+
+    Client and server implementations *may* agree on a different serialization to JSON, such as XML, by specifying the
+    corresponding suffix. Clients and servers *must* support JSON serialization.
+
     # Conflict resolution
 
-    This API makes use of the Last-Modified headers in order to resolve conflicts. When updating a DMP, consider passing
-    the Last-Modified header from the response in the If-Unmodified-Since header in the PUT request. If the DMP has been
-    modified since you last fetched the data, the server will return a 409 header.
+    This API makes use of the `Last-Modified` headers in order to resolve conflicts. When updating a DMP, consider
+    passing the `Last-Modified` header from the response in the `If-Unmodified-Since` header in the PUT request. If the
+    DMP has been modified since you last fetched the data, the server will return a 409 header.
 
     Server implementations should always update the modified field of the DMP to the server time on PUT and return it
-    in the Last-Modified header. On PUT, server implementations should compare the If-Unmodified-Since header with the
-    stored modified field.
-  version: 1.2.0-alpha1
+    in the `Last-Modified` header. On PUT, server implementations should compare the `If-Unmodified-Since` header with
+    the stored modified field.
+  version: 0.1.0
   license:
     name: Creative Commons Zero v1.0 Universal
     identifier: "CC0-1.0"
 externalDocs:
   description: RDA DMP Common Standards WG
   url: https://github.com/RDA-DMP-Common
+tags:
+  - name: DMP
+    description: DMP-related endpoints
 paths:
   /dmps:
     get:
@@ -34,15 +69,18 @@ paths:
         For items accepting more than one value you may pass multiple values by repeating the parameter in the
         query string for each item.
       operationId: listDMPs
+      tags:
+        - DMP
       parameters:
         - name: offset
           in: query
           required: false
+          description: Number of items to skip from the start.
           schema:
+            title: Offset
             type: integer
             minimum: 0
             default: 0
-            description: Offset to start listing from.
         - name: count
           in: query
           required: false
@@ -171,24 +209,22 @@ paths:
           required: false
           schema:
             type: string
-            format: date-time
+            format: date
         - name: embargo_after
           in: query
           required: false
           schema:
             type: string
-            format: date-time
+            format: date
       responses:
         200:
-          description: "A list of DMPs"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/DMPListResponse"
+          $ref: "#/components/responses/DMPListResponse"
         400:
           $ref: "#/components/responses/BadRequestResponse"
         401:
           $ref: "#/components/responses/AuthenticationRequiredResponse"
+        406:
+          $ref: "#/components/responses/NotAcceptableResponse"
         default:
           $ref: "#/components/responses/GenericErrorResponse"
     post:
@@ -198,9 +234,14 @@ paths:
         draft DMPs with formally valid, but incomplete fields. Alternatively, the implementation may reject incomplete
         DMPs if it cannot store them.
       operationId: createDMP
+      tags:
+        - DMP
       requestBody:
         required: true
         content:
+          application/vnd.org.rd-alliance.dmp-common.v1.2+json:
+            schema:
+              $ref: "#/components/schemas/DMPDocument"
           application/json:
             schema:
               $ref: "#/components/schemas/DMPDocument"
@@ -216,6 +257,9 @@ paths:
                 type: string
                 format: date-time
           content:
+            application/vnd.org.rd-alliance.dmp-common.v1.2+json:
+              schema:
+                $ref: "#/components/schemas/DMPWithID"
             application/json:
               schema:
                 $ref: "#/components/schemas/DMPWithID"
@@ -225,6 +269,8 @@ paths:
           $ref: "#/components/responses/AuthenticationRequiredResponse"
         403:
           $ref: "#/components/responses/InsufficientPermissionsResponse"
+        406:
+          $ref: "#/components/responses/NotAcceptableResponse"
         409:
           $ref: "#/components/responses/ConflictResponse"
         default:
@@ -235,6 +281,8 @@ paths:
       description: |
         Fetch a DMP based on its ID.
       operationId: getDMP
+      tags:
+        - DMP
       parameters:
         - name: id
           in: path
@@ -251,14 +299,10 @@ paths:
               schema:
                 type: string
                 format: date-time
-            ETag:
-              description: |
-                The server should compute a hash of the DMP so that clients may submit conditional PUT requests and
-                avoid conflicts. See https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/ETag for
-                an explanation how ETag headers work.
-              schema:
-                type: string
           content:
+            application/vnd.org.rd-alliance.dmp-common.v1.2+json:
+              schema:
+                $ref: "#/components/schemas/DMPWithID"
             application/json:
               schema:
                 $ref: "#/components/schemas/DMPWithID"
@@ -268,10 +312,14 @@ paths:
           $ref: "#/components/responses/InsufficientPermissionsResponse"
         404:
           $ref: "#/components/responses/DMPNotFoundResponse"
+        406:
+          $ref: "#/components/responses/NotAcceptableResponse"
         default:
           $ref: "#/components/responses/GenericErrorResponse"
     put:
       operationId: putDMP
+      tags:
+        - DMP
       summary: Overwrite a DMP
       description: |
         Completely overwrite a DMP with the specified data. The server MUST honor the If-Unmodified-Since and IF-Match
@@ -291,6 +339,9 @@ paths:
       requestBody:
         required: true
         content:
+          application/vnd.org.rd-alliance.dmp-common.v1.2+json:
+            schema:
+              $ref: "#/components/schemas/DMPDocument"
           application/json:
             schema:
               $ref: "#/components/schemas/DMPDocument"
@@ -306,6 +357,9 @@ paths:
                 type: string
                 format: date-time
           content:
+            application/vnd.org.rd-alliance.dmp-common.v1.2+json:
+              schema:
+                $ref: "#/components/schemas/DMPWithID"
             application/json:
               schema:
                 $ref: "#/components/schemas/DMPWithID"
@@ -317,12 +371,18 @@ paths:
           $ref: "#/components/responses/InsufficientPermissionsResponse"
         404:
           $ref: "#/components/responses/DMPNotFoundResponse"
+        406:
+          $ref: "#/components/responses/NotAcceptableResponse"
         409:
           $ref: "#/components/responses/ConflictResponse"
+        415:
+          $ref: "#/components/responses/UnsupportedMediaTypeResponse"
         default:
           $ref: "#/components/responses/GenericErrorResponse"
     delete:
       operationId: deleteDMP
+      tags:
+        - DMP
       summary: Delete a DMP
       description: Delete a DMP based on its ID.
       parameters:
@@ -340,23 +400,40 @@ paths:
           $ref: "#/components/responses/InsufficientPermissionsResponse"
         404:
           $ref: "#/components/responses/DMPNotFoundResponse"
+        406:
+          $ref: "#/components/responses/NotAcceptableResponse"
         409:
           $ref: "#/components/responses/ConflictResponse"
         default:
           $ref: "#/components/responses/GenericErrorResponse"
 components:
   responses:
+    DMPListResponse:
+      description: "A list of DMPs"
+      content:
+        application/vnd.org.rd-alliance.dmp-common.v1.2+json:
+          schema:
+            $ref: "#/components/schemas/DMPListResponseBody"
+        application/json:
+          schema:
+            $ref: "#/components/schemas/DMPListResponseBody"
     AuthenticationRequiredResponse:
       description: |
         Authentication required to delete the DMP. The implementation should always return this error code for
         unauthenticated users as deletion always requires authentication.
       content:
+        application/vnd.org.rd-alliance.dmp-common.v1.2+json:
+          schema:
+            $ref: "#/components/schemas/AuthenticationRequiredError"
         application/json:
           schema:
             $ref: "#/components/schemas/AuthenticationRequiredError"
     BadRequestResponse:
       description: Bad request
       content:
+        application/vnd.org.rd-alliance.dmp-common.v1.2+json:
+          schema:
+            $ref: '#/components/schemas/BadRequestError'
         application/json:
           schema:
             $ref: '#/components/schemas/BadRequestError'
@@ -365,6 +442,9 @@ components:
         A precondition specified in the If-Unmodified-Since or If-Match header cannot be
         fulfilled. The client should apply the modifications again and resubmit the request.
       content:
+        application/vnd.org.rd-alliance.dmp-common.v1.2+json:
+          schema:
+            $ref: "#/components/schemas/ConflictError"
         application/json:
           schema:
             $ref: "#/components/schemas/ConflictError"
@@ -376,12 +456,18 @@ components:
         especially be important if the DMP tool uses numeric IDs to avoid enabling an enumeration of possible DMP
         IDs.
       content:
+        application/vnd.org.rd-alliance.dmp-common.v1.2+json:
+          schema:
+            $ref: "#/components/schemas/DMPNotFoundError"
         application/json:
           schema:
             $ref: "#/components/schemas/DMPNotFoundError"
     GenericErrorResponse:
       description: The request failed
       content:
+        application/vnd.org.rd-alliance.dmp-common.v1.2+json:
+          schema:
+            $ref: "#/components/schemas/GenericError"
         application/json:
           schema:
             $ref: "#/components/schemas/GenericError"
@@ -392,9 +478,33 @@ components:
         existence of a DMP with the specified ID if the user has no permissions to at least view this DMP. The
         implementation SHOULD return this error code if the user has at least read permissions for this DMP.
       content:
+        application/vnd.org.rd-alliance.dmp-common.v1.2+json:
+          schema:
+            $ref: "#/components/schemas/InsufficientPermissionsError"
         application/json:
           schema:
             $ref: "#/components/schemas/InsufficientPermissionsError"
+    NotAcceptableResponse:
+      description: |
+        The server cannot produce a response that the client requested in its `Accept` header.
+      content:
+        application/vnd.org.rd-alliance.dmp-common.v1.2+json:
+          schema:
+            $ref: "#/components/schemas/NotAcceptableError"
+        application/json:
+          schema:
+            $ref: "#/components/schemas/NotAcceptableError"
+    UnsupportedMediaTypeResponse:
+      description: |
+        The server cannot process the request the client because it does not support the DMP standard the client
+        sent the document in.
+      content:
+        application/vnd.org.rd-alliance.dmp-common.v1.2+json:
+          schema:
+            $ref: "#/components/schemas/UnsupportedMediaTypeError"
+        application/json:
+          schema:
+            $ref: "#/components/schemas/UnsupportedMediaTypeError"
   schemas:
     #region IDs
 
@@ -424,7 +534,7 @@ components:
     #endregion
     #region Non-error responses
 
-    DMPListResponse:
+    DMPListResponseBody:
       type: object
       required:
         - total_count
@@ -481,6 +591,32 @@ components:
               title: Error code
               type: string
               const: "insufficient_permissions"
+    NotAcceptableError:
+      title: "Cannot meet Accept requirements"
+      description: The client has requested a DMP standard that the server cannot fulfill.
+      allOf:
+        - $ref: "#/components/schemas/Error"
+        - type: object
+          required:
+            - error_code
+          properties:
+            error_code:
+              title: Error code
+              type: string
+              const: "not_acceptable"
+    UnsupportedMediaTypeError:
+      title: "Unsupported DMP standard"
+      description: The server cannot process the DMP sent by the client because it does not support th especified MIME type.
+      allOf:
+        - $ref: "#/components/schemas/Error"
+        - type: object
+          required:
+            - error_code
+          properties:
+            error_code:
+              title: Error code
+              type: string
+              const: "unsupported_media_type"
     DMPAlreadyExistsError:
       title: "DMP already exists"
       description: |
@@ -602,7 +738,6 @@ components:
         dmp:
           $ref: "#/components/schemas/DMPData"
     Booleanish:
-      $anchor: Booleanish
       type: string
       enum:
         - 'yes'
@@ -615,7 +750,6 @@ components:
       examples:
         - 'yes'
     Certification:
-      $anchor: Certification
       type: string
       enum:
         - din31644
@@ -633,7 +767,6 @@ components:
       examples:
         - coretrustseal
     Contact:
-      $anchor: Contact
       type: object
       title: The DMP Contact Schema
       properties:
@@ -657,7 +790,6 @@ components:
         - mbox
         - name
     Contributor:
-      $anchor: Contributor
       type: object
       title: The Contributor Items Schema
       properties:
@@ -683,7 +815,6 @@ components:
         - name
         - role
     ContributorID:
-      $anchor: ContributorID
       type: object
       title: The Contributor ID Schema
       properties:
@@ -695,7 +826,6 @@ components:
         - identifier
         - type
     ContributorIDType:
-      $anchor: ContributorIDType
       type: string
       enum:
         - orcid
@@ -707,19 +837,16 @@ components:
       examples:
         - orcid
     ContributorIDValue:
-      $anchor: ContributorIDValue
       type: string
       title: The DMP Contributor Identifier Schema
       examples:
         - 'https://orcid.org/0000-0003-0644-4174'
     ContributorRole:
-      $anchor: ContributorRole
       type: string
       title: The Contributor Role(s) Items Schema
       examples:
         - Data Steward
     ContributorRoles:
-      $anchor: ContributorRoles
       type: array
       title: The Role Schema
       description: Type of contributor
@@ -727,13 +854,11 @@ components:
         $ref: '#/components/schemas/ContributorRole'
       uniqueItems: true
     Contributors:
-      $anchor: Contributors
       type: array
       title: The Contributor Schema
       items:
         $ref: '#/components/schemas/Contributor'
     ContactID:
-      $anchor: ContactID
       type: object
       title: The Contact ID Schema
       properties:
@@ -745,7 +870,6 @@ components:
         - identifier
         - type
     ContactIDType:
-      $anchor: ContactIDType
       type: string
       enum:
         - orcid
@@ -757,13 +881,11 @@ components:
       examples:
         - orcid
     ContactIDValue:
-      $anchor: ContactIDValue
       type: string
       title: The DMP Contact Identifier Schema
       examples:
         - 'https://orcid.org/0000-0003-0644-4174'
     Cost:
-      $anchor: Cost
       type: object
       title: The Cost Items Schema
       properties:
@@ -790,13 +912,11 @@ components:
       required:
         - title
     Costs:
-      $anchor: Costs
       type: array
       title: The Cost Schema
       items:
         $ref: '#/components/schemas/Cost'
     CurrencyCode:
-      $anchor: CurrencyCode
       type: string
       enum:
         - AED
@@ -966,7 +1086,6 @@ components:
       examples:
         - EUR
     CountryCode:
-      $anchor: CountryCode
       type: string
       enum:
         - AD
@@ -1223,7 +1342,6 @@ components:
       examples:
         - AT
     DataAccess:
-      $anchor: DataAccess
       type: string
       enum:
         - open
@@ -1234,7 +1352,6 @@ components:
       examples:
         - open
     Dataset:
-      $anchor: Dataset
       type: object
       title: The Dataset Items Schema
       properties:
@@ -1544,7 +1661,6 @@ components:
         - sensitive_data
         - title
     DatasetID:
-      $anchor: DatasetID
       type: object
       title: The Dataset ID Schema
       description: Dataset ID
@@ -1557,13 +1673,11 @@ components:
         - identifier
         - type
     Datasets:
-      $anchor: Datasets
       type: array
       title: The Dataset Schema
       items:
         $ref: '#/components/schemas/Dataset'
     DatasetIDType:
-      $anchor: DatasetIDType
       type: string
       enum:
         - handle
@@ -1576,14 +1690,12 @@ components:
       examples:
         - handle
     DatasetIDValue:
-      $anchor: DatasetIDValue
       type: string
       title: The Dataset Identifier Schema
       description: Identifier for a dataset
       examples:
         - 'https://hdl.handle.net/11353/10.923628'
     DMPData:
-      $anchor: DMPData
       type: object
       title: The DMP Schema
       properties:
@@ -1664,7 +1776,6 @@ components:
         - modified
         - title
     DMPID:
-      $anchor: DMPID
       type: object
       title: The DMP Identifier Schema
       description: Identifier for the DMP itself
@@ -1677,7 +1788,6 @@ components:
         - identifier
         - type
     DMPIDType:
-      $anchor: DMPIDType
       type: string
       enum:
         - handle
@@ -1690,14 +1800,12 @@ components:
       examples:
         - doi
     DMPIDValue:
-      $anchor: DMPIDValue
       type: string
       title: The DMP Identifier Value Schema
       description: Identifier for a DMP
       examples:
         - 'https://doi.org/10.1371/journal.pcbi.1006750'
     Distribution:
-      $anchor: Distribution
       type: object
       title: The Dataset Distribution Items Schema
       properties:
@@ -1772,7 +1880,6 @@ components:
         - data_access
         - title
     FunderID:
-      $anchor: FunderID
       type: object
       title: The Funder ID Schema
       description: Funder ID of the associated project
@@ -1785,7 +1892,6 @@ components:
         - identifier
         - type
     FunderIDType:
-      $anchor: FunderIDType
       type: string
       enum:
         - fundref
@@ -1796,7 +1902,6 @@ components:
       examples:
         - fundref
     FunderIDValue:
-      $anchor: FunderIDValue
       type: string
       title: The Funder ID Value Schema
       description: >-
@@ -1805,7 +1910,6 @@ components:
       examples:
         - '501100002428'
     FundingStatus:
-      $anchor: FundingStatus
       type: string
       enum:
         - planned
@@ -1819,7 +1923,6 @@ components:
       examples:
         - granted
     Funding:
-      $anchor: Funding
       type: object
       title: The DMP Project Funding Items Schema
       properties:
@@ -1832,14 +1935,12 @@ components:
       required:
         - funder_id
     Fundings:
-      $anchor: Fundings
       type: array
       title: The DMP Project Funding Schema
       description: Funding related with a project
       items:
         $ref: '#/components/schemas/Funding'
     GrantID:
-      $anchor: GrantID
       type: object
       title: The Funding Grant ID Schema
       description: Grant ID of the associated project
@@ -1852,7 +1953,6 @@ components:
         - identifier
         - type
     GrantIDType:
-      $anchor: GrantIDType
       type: string
       title: The Funding Grant ID Type Schema
       enum:
@@ -1862,14 +1962,12 @@ components:
       examples:
         - other
     GrantIDValue:
-      $anchor: GrantIDValue
       type: string
       title: The Funding Grant ID Value Schema
       description: Grant ID
       examples:
         - '776242'
     Host:
-      $anchor: Host
       type: object
       title: The Dataset Distribution Host Schema
       description: >-
@@ -1931,13 +2029,11 @@ components:
         - title
         - url
     MIMEType:
-      $anchor: MIMEType
       type: string
       title: The Dataset Distribution Format Items Schema
       examples:
         - image/tiff
     LanguageID:
-      $anchor: LanguageID
       type: string
       enum:
         - aar
@@ -2130,7 +2226,6 @@ components:
       examples:
         - eng
     License:
-      $anchor: License
       type: object
       title: The Dataset Distribution License Items
       properties:
@@ -2154,14 +2249,12 @@ components:
         - license_ref
         - start_date
     Licenses:
-      $anchor: Licenses
       type: array
       title: The Dataset Distribution License(s) Schema
       description: To list all licenses applied to a specific distribution of data.
       items:
         $ref: '#/components/schemas/License'
     Metadata:
-      $anchor: Metadata
       type: object
       title: The Dataset Metadata Items Schema
       properties:
@@ -2179,7 +2272,6 @@ components:
         - language
         - metadata_standard_id
     MetadataStandardID:
-      $anchor: MetadataStandardID
       type: object
       title: The Dataset Metadata Standard ID Schema
       properties:
@@ -2191,7 +2283,6 @@ components:
         - identifier
         - type
     MetadataStandardIDType:
-      $anchor: MetadataStandardIDType
       type: string
       enum:
         - url
@@ -2201,14 +2292,12 @@ components:
       examples:
         - url
     MetadataStandardIDValue:
-      $anchor: MetadataStandardIDValue
       type: string
       title: The Dataset Metadata Standard Identifier Value Schema
       description: Identifier for the metadata standard used.
       examples:
         - 'http://www.dublincore.org/specifications/dublin-core/dcmi-terms/'
     PidSystems:
-      $anchor: PidSystems
       type: array
       title: The Dataset Distribution Host PID System Schema
       description: >-
@@ -2218,7 +2307,6 @@ components:
       items:
         $ref: '#/components/schemas/PidSystemType'
     PidSystemType:
-      $anchor: PidSystemType
       type: string
       title: The Dataset Distribution Host PID System Items Schema
       enum:
@@ -2244,7 +2332,6 @@ components:
       examples:
         - doi
     Project:
-      $anchor: Project
       type: object
       title: The DMP Project Items Schema
       properties:
