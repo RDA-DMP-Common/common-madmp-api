@@ -1,0 +1,25 @@
+{
+  "scripts": {
+    "dev": "nodemon --config ./nodemon.json",
+    "openapi:generate": "npx openapi-typescript ../../../openapi.yaml -o ./src/gen/latest/schema.ts"
+  },
+  "dependencies": {
+    "@faker-js/faker": "^9.9.0",
+    "express": "^5.1.0",
+    "msw": "^2.10.4",
+    "openapi-ts-router": "^0.3.2",
+    "valibot": "^1.1.0",
+    "validation-adapters": "^0.0.28",
+    "zod": "^4.0.13"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.1.0",
+    "nodemon": "^3.1.10",
+    "openapi-typescript": "^7.8.0",
+    "orval": "^7.10.0",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.8.3"
+  }
+}
