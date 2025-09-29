@@ -57,6 +57,8 @@ externalDocs:
 tags:
   - name: DMP
     description: DMP-related endpoints
+security:
+  - BearerAuth: []
 paths:
   /dmps:
     get:
@@ -505,6 +507,12 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/UnsupportedMediaTypeError"
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+
   schemas:
     #region IDs
 
