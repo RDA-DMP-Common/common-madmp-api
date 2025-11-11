@@ -1,0 +1,22 @@
+{
+  "$schema": "./JSON-schema/1.2/maDMP-schema-1.2.json",
+  "dmp": {
+    "title": "DMP including FAIRsharing DOIs",
+    "contact": {
+      "contact_id": {
+        "identifier": "http://orcid.org/0000-0000-0000-0000",
+        "type": "orcid"
+      },
+      "mbox": "cc@example.com",
+      "name": "Charlie Chaplin"
+    },
+    "created": "2023-03-15T10:10:23.6Z",
+    "dmp_id": {
+      "identifier": "https://doi.org/10.0000/00.0.1269",
+      "type": "doi"
+    },
+    "ethical_issues_exist": "no",
+    "language": "eng",
+    "modified": "2019-02-06T15:30:42.1Z"
+  }
+}

@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>maDMP Validator & Diff Tool</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+    <!-- Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self';
+                   script-src 'self' 'unsafe-eval';
+                   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+                   img-src 'self' data: blob:;
+                   font-src 'self' data: https://fonts.gstatic.com;
+                   connect-src 'self' http://localhost:* https://*;
+                   base-uri 'self';
+                   form-action 'self';">
+
+    <!-- Security Headers -->
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+
+    <!-- Bootstrap 5.2 CSS (Bootswatch Yeti Theme) -->
+    <link href="css/lib/bootstrap.min.css" rel="stylesheet">
+    <link href="css/lib/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-file-earmark-diff"></i> maDMP Validator & Diff
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <button class="btn btn-outline-light btn-sm" id="darkModeToggle">
+                            <i class="bi bi-moon-fill"></i> Dark Mode
+                        </button>
+                    </li>
+                    <li class="nav-item ms-2">
+                        <button class="btn btn-outline-light btn-sm" data-bs-toggle="modal" data-bs-target="#helpModal">
+                            <i class="bi bi-question-circle"></i> Help
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar Toggle Button -->
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+        <i class="bi bi-chevron-left"></i>
+    </button>
+
+    <!-- Main Container -->
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Left Panel: Upload & Configuration -->
+            <div class="col-lg-4 left-column">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-upload"></i> Upload maDMP JSON
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Upload Tabs -->
+                        <ul class="nav nav-tabs mb-3" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="file-tab" data-bs-toggle="tab" data-bs-target="#file-upload" type="button">
+                                    <i class="bi bi-file-earmark-arrow-up"></i> File
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="drop-tab" data-bs-toggle="tab" data-bs-target="#drag-drop" type="button">
+                                    <i class="bi bi-inbox"></i> Drop
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="paste-tab" data-bs-toggle="tab" data-bs-target="#paste-json" type="button">
+                                    <i class="bi bi-clipboard"></i> Paste
+                                </button>
+                            </li>
+                        </ul>
+
+                        <!-- Tab Content -->
+                        <div class="tab-content">
+                            <!-- File Upload -->
+                            <div class="tab-pane fade show active" id="file-upload">
+                                <div class="mb-3">
+                                    <input type="file" class="form-control" id="fileInput" accept=".json">
+                                </div>
+                            </div>
+
+                            <!-- Drag & Drop -->
+                            <div class="tab-pane fade" id="drag-drop">
+                                <div id="dropZone" class="drop-zone">
+                                    <i class="bi bi-cloud-upload display-4"></i>
+                                    <p class="mt-2">Drag & drop JSON file here</p>
+                                    <small class="text-muted">or click to browse</small>
+                                </div>
+                            </div>
+
+                            <!-- Paste JSON -->
+                            <div class="tab-pane fade" id="paste-json">
+                                <textarea id="pasteArea" class="form-control" rows="6" placeholder="Paste your maDMP JSON here..."></textarea>
+                                <button class="btn btn-primary btn-sm mt-2 w-100" id="loadPastedJson">
+                                    <i class="bi bi-check-circle"></i> Load JSON
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Validation Status -->
+                        <div id="inputValidationStatus" class="mt-3"></div>
+
+                        <!-- Add to Library Option -->
+                        <div class="form-check mt-3">
+                            <input class="form-check-input" type="checkbox" id="addToLibraryCheck" checked>
+                            <label class="form-check-label" for="addToLibraryCheck">
+                                <i class="bi bi-folder-plus"></i> Add to File Library
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- File Library -->
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-folder2"></i> File Library
+                            <span class="badge bg-secondary ms-2" id="fileLibraryCount">0</span>
+                        </h5>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-secondary" id="clearAllFiles" title="Clear all files">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" title="Library settings">
+                                <i class="bi bi-gear"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <div class="dropdown-item">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="persistFilesToggle">
+                                            <label class="form-check-label" for="persistFilesToggle">
+                                                Persist across sessions
+                                            </label>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <button class="dropdown-item" id="importLibrary">
+                                        <i class="bi bi-upload"></i> Import Library
+                                    </button>
+                                </li>
+                                <li>
+                                    <button class="dropdown-item" id="exportLibrary">
+                                        <i class="bi bi-download"></i> Export Library
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-body p-0" style="max-height: 400px; overflow-y: auto;">
+                        <div id="fileLibraryList">
+                            <!-- File list will be rendered here -->
+                            <div class="empty-state p-3 text-center">
+                                <i class="bi bi-folder2-open" style="font-size: 2rem; opacity: 0.5;"></i>
+                                <p class="mb-0 mt-2 text-muted">No files in library</p>
+                                <small class="text-muted">Upload files to get started</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer text-muted small">
+                        <i class="bi bi-info-circle"></i> Select files for Left [L] and Right [R] comparison
+                    </div>
+                </div>
+
+                <!-- API Configuration -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-gear"></i> API Configuration
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="apiEndpoint" class="form-label">API Endpoint URL</label>
+                            <input type="url" class="form-control" id="apiEndpoint" placeholder="https://api.example.com/madmp">
+                            <small class="text-muted">Enter the common-madmp-api endpoint</small>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-success" id="sendToApi">
+                                <i class="bi bi-send"></i> Send to API
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" id="testConnection">
+                                <i class="bi bi-wifi"></i> Test Connection
+                            </button>
+                        </div>
+
+                        <!-- Output Validation Status -->
+                        <div id="outputValidationStatus" class="mt-3"></div>
+                    </div>
+                </div>
+
+                <!-- Session History -->
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-clock-history"></i> History
+                        </h5>
+                        <button class="btn btn-sm btn-outline-secondary" id="clearHistory" title="Clear all history">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                    <div class="card-body p-0 session-history-body">
+                        <div id="sessionHistory">
+                            <div class="empty-state p-3">
+                                <i class="bi bi-clock-history"></i>
+                                <p class="mb-0 mt-2">No saved sessions</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-bar-chart"></i> Statistics
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="statsContainer">
+                            <p class="text-muted">Upload a file to see statistics</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Diff Visualization -->
+            <div class="col-lg-8 right-column">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-columns-gap"></i> Diff Visualization
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Search & Filter Bar -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                    <input type="text" class="form-control" id="diffSearch" placeholder="Search changes..." autocomplete="off">
+                                    <button class="btn btn-outline-secondary" id="clearSearch" title="Clear search">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                                <small id="searchStatus" class="text-muted"></small>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button class="btn btn-outline-secondary" id="prevChange" title="Previous change (Alt+←)">
+                                        <i class="bi bi-arrow-left"></i>
+                                    </button>
+                                    <button class="btn btn-outline-secondary disabled" id="changeCounter">0 / 0</button>
+                                    <button class="btn btn-outline-secondary" id="nextChange" title="Next change (Alt+→)">
+                                        <i class="bi bi-arrow-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Filter Checkboxes -->
+                        <div class="mb-3">
+                            <small class="text-muted me-2">Show:</small>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="filter-added" checked>
+                                <label class="form-check-label" for="filter-added">
+                                    Added <span class="badge bg-success" id="filter-added-count">0</span>
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="filter-removed" checked>
+                                <label class="form-check-label" for="filter-removed">
+                                    Removed <span class="badge bg-danger" id="filter-removed-count">0</span>
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="filter-modified" checked>
+                                <label class="form-check-label" for="filter-modified">
+                                    Modified <span class="badge bg-warning" id="filter-modified-count">0</span>
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="filter-unchanged">
+                                <label class="form-check-label" for="filter-unchanged">
+                                    Unchanged <span class="badge bg-secondary" id="filter-unchanged-count">0</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Diff View Tabs -->
+                        <ul class="nav nav-pills mb-3" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="unified-tab" data-bs-toggle="tab" data-bs-target="#unified-view" type="button">
+                                    <i class="bi bi-file-diff"></i> Unified
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="sidebyside-tab" data-bs-toggle="tab" data-bs-target="#sidebyside-view" type="button">
+                                    <i class="bi bi-layout-split"></i> Side-by-Side
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="jsonata-tab" data-bs-toggle="tab" data-bs-target="#jsonata-view" type="button">
+                                    <i class="bi bi-code-square"></i> JSONata
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="tree-tab" data-bs-toggle="tab" data-bs-target="#tree-view" type="button">
+                                    <i class="bi bi-diagram-3"></i> Tree
+                                </button>
+                            </li>
+                        </ul>
+
+                        <!-- Export Options -->
+                        <div class="btn-group mb-3" role="group">
+                            <button type="button" class="btn btn-outline-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                                <i class="bi bi-download"></i> Export
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" id="exportJSON"><i class="bi bi-filetype-json"></i> JSON</a></li>
+                                <li><a class="dropdown-item" href="#" id="exportHTML"><i class="bi bi-filetype-html"></i> HTML</a></li>
+                                <li><a class="dropdown-item" href="#" id="exportPDF"><i class="bi bi-filetype-pdf"></i> PDF</a></li>
+                                <li><a class="dropdown-item" href="#" id="exportCSV"><i class="bi bi-filetype-csv"></i> CSV</a></li>
+                                <li><a class="dropdown-item" href="#" id="exportMarkdown"><i class="bi bi-filetype-md"></i> Markdown</a></li>
+                            </ul>
+                            <button class="btn btn-outline-secondary btn-sm" id="copyDiff">
+                                <i class="bi bi-clipboard"></i> Copy
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" id="saveSession">
+                                <i class="bi bi-save"></i> Save Session
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" id="toggleFullscreen">
+                                <i class="bi bi-arrows-fullscreen"></i> Fullscreen
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" id="showShortcuts" title="Keyboard shortcuts (?)">
+                                <i class="bi bi-keyboard"></i>
+                            </button>
+                        </div>
+
+                        <!-- Diff Content -->
+                        <div class="tab-content">
+                            <!-- Unified View -->
+                            <div class="tab-pane fade show active" id="unified-view">
+                                <div class="diff-container">
+                                    <div id="unified-diff" class="diff-panel"></div>
+                                </div>
+                            </div>
+
+                            <!-- Side-by-Side View -->
+                            <div class="tab-pane fade" id="sidebyside-view">
+                                <div class="diff-container">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6 class="text-center bg-light p-2">Input (Original)</h6>
+                                            <div id="sidebyside-left" class="diff-panel"></div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6 class="text-center bg-light p-2">Output (Merged)</h6>
+                                            <div id="sidebyside-right" class="diff-panel"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- JSONata View -->
+                            <div class="tab-pane fade" id="jsonata-view">
+                                <div class="diff-container">
+                                    <div id="jsonata-queries" class="diff-panel"></div>
+                                </div>
+                            </div>
+
+                            <!-- Tree View -->
+                            <div class="tab-pane fade" id="tree-view">
+                                <div class="diff-container">
+                                    <div id="tree-diff" class="diff-panel"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div class="modal fade" id="helpModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-info-circle"></i> User Guide
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <h6>How to Use This Tool</h6>
+                    <ol>
+                        <li><strong>Upload maDMP JSON:</strong> Use file picker, drag & drop, or paste your JSON</li>
+                        <li><strong>Validate:</strong> The tool automatically validates against maDMP schema v1.2</li>
+                        <li><strong>Configure API:</strong> Enter your common-madmp-api endpoint URL</li>
+                        <li><strong>Send to API:</strong> Click "Send to API" to receive the merged maDMP</li>
+                        <li><strong>View Differences:</strong> Choose from 4 diff visualization formats</li>
+                        <li><strong>Export:</strong> Download or copy the diff results</li>
+                    </ol>
+
+                    <h6 class="mt-4">About maDMP</h6>
+                    <p>
+                        The RDA DMP Common Standard provides machine-actionable Data Management Plans.
+                        This tool helps you validate and compare maDMP documents to ensure compliance
+                        with the standard and track changes through the API.
+                    </p>
+
+                    <h6 class="mt-4">Diff Formats</h6>
+                    <ul>
+                        <li><strong>Side-by-Side:</strong> Visual comparison with highlighted changes</li>
+                        <li><strong>Unified:</strong> Git-style diff format</li>
+                        <li><strong>JSONata:</strong> Transformation queries between versions</li>
+                        <li><strong>Tree:</strong> Hierarchical view of structural changes</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay d-none">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Processing...</p>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="js/lib/bootstrap.bundle.min.js"></script>
+
+    <!-- Third-party Libraries -->
+    <script src="js/lib/ajv2020.min.js"></script>
+    <script src="js/lib/jsonata.min.js"></script>
+    <script src="js/lib/diff.min.js"></script>
+    <script src="js/lib/jspdf.umd.min.js"></script>
+
+    <!-- Application Scripts - Core -->
+    <script src="js/utils.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/validator.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/diff-engine.js"></script>
+
+    <!-- Diff Renderers -->
+    <script src="js/diff-renderers/side-by-side.js"></script>
+    <script src="js/diff-renderers/unified.js"></script>
+    <script src="js/diff-renderers/jsonata.js"></script>
+    <script src="js/diff-renderers/tree.js"></script>
+
+    <!-- Enhanced Features -->
+    <script src="js/diff-search.js"></script>
+    <script src="js/diff-navigation.js"></script>
+    <script src="js/session-manager.js"></script>
+    <script src="js/file-library.js"></script>
+    <script src="js/keyboard-shortcuts.js"></script>
+    <script src="js/sidebar-toggle.js"></script>
+
+    <!-- Exporters -->
+    <script src="js/exporters/pdf-exporter.js"></script>
+    <script src="js/exporters/csv-exporter.js"></script>
+    <script src="js/exporters/markdown-exporter.js"></script>
+    <script src="js/exporters/html-exporter.js"></script>
+
+    <!-- Main Application -->
+    <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+# Environment files
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
+
+# Editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+.project
+.settings/
+.classpath
+
+# Node.js (if added later)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+.npm
+.yarn/
+dist/
+build/
+
+# Rust backend
+rust-backend/target/
+rust-backend/**/*.rs.bk
+rust-backend/Cargo.lock
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.backup
+
+# Test coverage
+coverage/
+*.lcov
+.nyc_output/
+
+# Build artifacts
+*.o
+*.so
+*.dylib
+*.dll
+*.exe
+
+# IDE specific
+.vscode/settings.json
+.vscode/launch.json
+.idea/workspace.xml
+.idea/tasks.xml
+
+# macOS
+.AppleDouble
+.LSOverride
+Icon
+
+# Session and cache
+.cache/
+*.session
+sessions/
+
+# Exported files (user-generated)
+exports/
+downloads/
+
+# Documentation builds
+docs/_build/
+docs/.doctrees/
+
+# External git repositories (not submodules)
+RDA-DMP-Common-Standard/
+common-madmp-api/
+
+# Python (if used for tooling)
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+ENV/
+env/
+
+# Docker
+.dockerignore
+docker-compose.override.yml
