@@ -1,11 +1,27 @@
 # Common maDMP API
 
-> [!WARNING]  
+> [!WARNING]
 > This is an initial work in progress and the API is subject to change.
 
 ## Abstract
 
 This API provides a common baseline standard for exchanging Data Management Plans among compliant platforms. The API specification is based on the work of the [Common maDMP Standard](https://github.com/RDA-DMP-Common/RDA-DMP-Common-Standard).
+
+## Web-Based Validator & Diff Tool
+
+A client-side web application for validating and comparing maDMP documents is available on the **`webdiff` branch**. This tool provides:
+
+- **Validation**: Check maDMP JSON against schema v1.2
+- **Comparison**: Compare different versions with multiple visualization formats
+- **API Integration**: Test integration with common-madmp-api endpoints
+- **Export**: Generate reports in JSON, HTML, PDF, CSV, and Markdown formats
+
+**Quick Access:**
+- **Online Demo**: [xrzhou.com/webdiff](https://xrzhou.com/webdiff)
+- **Branch**: `git checkout webdiff` (see [webdiff/README.md](../../tree/webdiff/webdiff/README.md) for details)
+- **GitHub Pages**: Deployable via gh-pages branch or GitHub Actions
+
+This tool complements the API specification by providing an interactive way to validate and visualize maDMP documents.
 
 ## Implementing this API
 

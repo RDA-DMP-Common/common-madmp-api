@@ -24,10 +24,21 @@ This tool provides researchers, data managers, and institutions with a comprehen
 
 ## Quick Start
 
+### Online Demo
+Visit **[xrzhou.com/webdiff](https://xrzhou.com/webdiff)** for a quick test without any installation!
+
+### Local Setup
+
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/standard-diff.git
-cd standard-diff
+git clone https://github.com/xiaoranzhou/common-madmp-api.git
+cd common-madmp-api
+
+# Switch to the webdiff branch
+git checkout webdiff
+
+# Navigate to the webdiff directory
+cd webdiff
 
 # Open in browser (no build required!)
 open index.html
@@ -38,6 +49,8 @@ python3 -m http.server 8000
 ```
 
 **That's it!** The tool includes example files that are automatically loaded when you first open it.
+
+> **Note**: This tool is maintained in the `webdiff` branch of the [common-madmp-api](https://github.com/xiaoranzhou/common-madmp-api) repository. It provides a client-side interface for the maDMP API specification.
 
 ## Demo Usage
 
@@ -71,6 +84,7 @@ python3 -m http.server 8000
 - [Features](#features)
 - [Technology Stack](#technology-stack)
 - [Getting Started](#getting-started)
+- [Deployment](#deployment)
 - [File Structure](#file-structure)
 - [Example maDMP Files](#example-madmp-files)
 - [Browser Compatibility](#browser-compatibility)
@@ -276,46 +290,139 @@ Switch between the four visualization formats to explore changes:
 - Use "Copy" button for quick clipboard copy
 - Press ? key to view all keyboard shortcuts
 
+## Deployment
+
+### GitHub Pages Setup
+
+To deploy this application using GitHub Pages from the `webdiff` subdirectory:
+
+#### Option 1: Using gh-pages Branch (Recommended)
+
+```bash
+# From the webdiff branch
+cd /path/to/common-madmp-api
+
+# Ensure you're on the webdiff branch
+git checkout webdiff
+
+# Create an orphan gh-pages branch
+git checkout --orphan gh-pages
+
+# Keep only the webdiff directory
+git rm -rf .
+git checkout webdiff -- webdiff
+mv webdiff/* .
+rm -rf webdiff
+
+# Commit and push
+git add .
+git commit -m "Deploy webdiff to GitHub Pages"
+git push -u origin gh-pages
+
+# Go back to webdiff branch
+git checkout webdiff
+```
+
+Then in your GitHub repository settings:
+1. Go to **Settings** → **Pages**
+2. Under **Source**, select **Deploy from a branch**
+3. Select **gh-pages** branch and **/ (root)** folder
+4. Click **Save**
+
+Your site will be available at: `https://xiaoranzhou.github.io/common-madmp-api/`
+
+#### Option 2: Using GitHub Actions (Alternative)
+
+Create `.github/workflows/deploy-webdiff.yml` on the `webdiff` branch:
+
+```yaml
+name: Deploy Webdiff to GitHub Pages
+
+on:
+  push:
+    branches: [webdiff]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './webdiff'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+```
+
+Then in GitHub repository settings:
+1. Go to **Settings** → **Pages**
+2. Under **Source**, select **GitHub Actions**
+
+#### Testing Before Merging
+
+Before merging into the main branch, you can test the application at:
+- **Production test site**: [xrzhou.com/webdiff](https://xrzhou.com/webdiff)
+- **GitHub Pages**: After deployment as described above
+
+This allows thorough testing in a production-like environment before integrating with the main API documentation.
+
 ## File Structure
 
 ```
-standard-diff/
-├── index.html                          # Main HTML file
-├── README.md                           # This file
-├── css/
-│   └── styles.css                      # Custom styles & dark mode
-├── js/
-│   ├── main.js                         # Application entry point
-│   ├── store.js                        # Zustand state management
-│   ├── utils.js                        # Utility functions
-│   ├── validator.js                    # JSON schema validation
-│   ├── api.js                          # API integration
-│   ├── diff-engine.js                  # Diff calculation
-│   ├── diff-search.js                  # Search & filter functionality
-│   ├── diff-navigation.js              # Change navigation controls
-│   ├── session-manager.js              # Session save/load/history
-│   ├── file-library.js                 # File library management
-│   ├── keyboard-shortcuts.js           # Keyboard shortcuts system
-│   ├── sidebar-toggle.js               # Sidebar collapse/expand
-│   ├── diff-renderers/
-│   │   ├── side-by-side.js             # Side-by-side view
-│   │   ├── unified.js                  # Unified diff view
-│   │   ├── jsonata.js                  # JSONata queries
-│   │   └── tree.js                     # Tree structure view
-│   └── exporters/
-│       ├── pdf-exporter.js             # PDF report generation
-│       ├── csv-exporter.js             # CSV export
-│       ├── markdown-exporter.js        # Markdown export
-│       └── html-exporter.js            # HTML report generation
-├── schemas/
-│   └── maDMP-schema-1.2.json           # maDMP JSON schema v1.2
-└── examples/
-    └── JSON/                           # Example maDMP files
-        ├── ex1-header-fundedProject.json
-        ├── ex2-dataset-planned.json
-        ├── ex3-dataset-finished.json
-        ├── missing-title.json
-        └── missing-dataset.json
+common-madmp-api/
+├── webdiff/                            # This application (on webdiff branch)
+│   ├── index.html                      # Main HTML file
+│   ├── README.md                       # This file
+│   ├── css/
+│   │   └── styles.css                  # Custom styles & dark mode
+│   ├── js/
+│   │   ├── main.js                     # Application entry point
+│   │   ├── store.js                    # Zustand state management
+│   │   ├── utils.js                    # Utility functions
+│   │   ├── validator.js                # JSON schema validation
+│   │   ├── api.js                      # API integration
+│   │   ├── diff-engine.js              # Diff calculation
+│   │   ├── diff-search.js              # Search & filter functionality
+│   │   ├── diff-navigation.js          # Change navigation controls
+│   │   ├── session-manager.js          # Session save/load/history
+│   │   ├── file-library.js             # File library management
+│   │   ├── keyboard-shortcuts.js       # Keyboard shortcuts system
+│   │   ├── sidebar-toggle.js           # Sidebar collapse/expand
+│   │   ├── diff-renderers/
+│   │   │   ├── side-by-side.js         # Side-by-side view
+│   │   │   ├── unified.js              # Unified diff view
+│   │   │   ├── jsonata.js              # JSONata queries
+│   │   │   └── tree.js                 # Tree structure view
+│   │   └── exporters/
+│   │       ├── pdf-exporter.js         # PDF report generation
+│   │       ├── csv-exporter.js         # CSV export
+│   │       ├── markdown-exporter.js    # Markdown export
+│   │       └── html-exporter.js        # HTML report generation
+│   ├── schemas/
+│   │   └── maDMP-schema-1.2.json       # maDMP JSON schema v1.2
+│   └── examples/
+│       └── JSON/                       # Example maDMP files
+│           ├── ex1-header-fundedProject.json
+│           ├── ex2-dataset-planned.json
+│           ├── ex3-dataset-finished.json
+│           ├── missing-title.json
+│           └── missing-dataset.json
+├── openapi.yaml                        # maDMP API specification (main branch)
+└── README.md                           # API documentation (main branch)
 ```
 
 ## Example maDMP Files
@@ -579,6 +686,12 @@ For issues related to:
 - **Feature Requests**: Open an issue on GitHub
 
 ## Changelog
+
+### Version 2.2.0 (2025-11-11)
+- **Repository Integration**: Integrated into common-madmp-api repository as webdiff branch
+- **GitHub Pages Deployment**: Added comprehensive deployment instructions
+- **Production Test Site**: Available at xrzhou.com/webdiff for quick testing
+- **Updated Documentation**: Restructured README to reflect new repository location
 
 ### Version 2.1.0 (2025-11-11)
 - **File Library**: Multi-file management with Left/Right selection system
