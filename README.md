@@ -1,22 +1,91 @@
 # Common maDMP API
 
-> [!WARNING]  
-> This is an initial work in progress and the API is subject to change.
+API specification for Machine-Actionable Data Management Plans (maDMPs).
 
-## Abstract
+This repository defines a common baseline API for exchanging Data Management Plans across platforms. The specification is based on the [RDA DMP Common Standard for maDMPs](https://github.com/RDA-DMP-Common/RDA-DMP-Common-Standard).
 
-This API provides a common baseline standard for exchanging Data Management Plans among compliant platforms. The API specification is based on the work of the [Common maDMP Standard](https://github.com/RDA-DMP-Common/RDA-DMP-Common-Standard).
+## Repository contents
 
-## Implementing this API
+- [openapi.yaml](openapi.yaml): canonical OpenAPI 3.1 specification
+- [bin/swagger-ui.sh](bin/swagger-ui.sh): builds static Swagger UI assets
+- `dist/`: generated Swagger UI output
+- [CHANGELOG.md](CHANGELOG.md): notable changes in Keep a Changelog format
+- [CONTRIBUTING.md](CONTRIBUTING.md): contribution workflow and checks
 
-We provide an [OpenAPI document](openapi.yaml) suitable for automatic code generation. You can generate both client and server libraries with it. While any OpenAPI 3.1-compliant generator may work, we have a good track record with [this generator](https://openapi-generator.tech/).
+## API at a glance
 
-Please note the following two implementation concerns:
+Current endpoints:
 
-1. This API is built for extensibility. Your server and client implementations must support content negotiation using the `Accept` header.
-2. The `PUT` API supports conditional uploads to manage conflicts. Your server implementation must support the `If-Unmodified-Since` header.
+- `GET /dmps`: list/search DMPs
+- `POST /dmps`: create a DMP
+- `GET /dmps/{id}`: fetch a DMP
+- `PUT /dmps/{id}`: overwrite a DMP
+- `DELETE /dmps/{id}`: delete a DMP
 
-To view the full documentation, [see this link](https://rda-dmp-common.github.io/common-madmp-api/).
+Published docs: [rda-dmp-common.github.io/common-madmp-api](https://rda-dmp-common.github.io/common-madmp-api/)
+
+## Implementing clients and servers
+
+You can use [openapi.yaml](openapi.yaml) to generate or hand-implement clients and servers. Any OpenAPI 3.1-compatible tooling should work. We have had good results with [OpenAPI Generator](https://openapi-generator.tech/).
+
+### Code generation examples
+
+Generate a TypeScript client:
+
+```bash
+openapi-generator-cli generate \
+  -i openapi.yaml \
+  -g typescript-fetch \
+  -o generated/typescript-client
+```
+
+Generate a Python FastAPI server stub:
+
+```bash
+openapi-generator-cli generate \
+  -i openapi.yaml \
+  -g python-fastapi \
+  -o generated/python-server
+```
+
+### Required behavior
+
+1. Content negotiation with `Accept`: client and server implementations must support media-type negotiation, including the standard media type `application/vnd.org.rd-alliance.dmp-common.v1.2+json`.
+2. Conditional updates on `PUT /dmps/{id}`: server implementations must support `If-Unmodified-Since` and return conflicts (`409`) when preconditions fail.
+3. `Last-Modified` propagation: servers should return `Last-Modified` on DMP reads/writes so clients can perform safe conditional updates.
+
+### HTTP examples
+
+Fetch a DMP with explicit content negotiation:
+
+```bash
+curl -i \
+  -H "Accept: application/vnd.org.rd-alliance.dmp-common.v1.2+json" \
+  "https://example.org/dmps/123"
+```
+
+Update safely with `If-Unmodified-Since`:
+
+```bash
+curl -i -X PUT \
+  -H "Accept: application/vnd.org.rd-alliance.dmp-common.v1.2+json" \
+  -H "Content-Type: application/vnd.org.rd-alliance.dmp-common.v1.2+json" \
+  -H "If-Unmodified-Since: Tue, 25 Mar 2025 14:13:00 GMT" \
+  --data @dmp.json \
+  "https://example.org/dmps/123"
+```
+
+### Authentication
+
+Authentication and authorization are intentionally out of scope in this specification. Implementers should apply an appropriate mechanism for their environment, for example OAuth 2.0 or API keys/Bearer tokens in the `Authorization` header.
+
+## Changelog
+
+This project keeps a human-readable changelog in [CHANGELOG.md](CHANGELOG.md), based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+## Contributing
+
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request or otherwise contributing to this repository.
 
 ## License
 
