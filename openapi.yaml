@@ -1565,8 +1565,8 @@ components:
         personal_data:
           type: string
           enum:
-            - yes
-            - no
+            - "yes"
+            - "no"
             - unknown
           title: Personal Data
           description: "To indicate whether a dataset contains personal data. Personal
@@ -1611,8 +1611,8 @@ components:
         sensitive_data:
           type: string
           enum:
-            - yes
-            - no
+            - "yes"
+            - "no"
             - unknown
           title: Sensitive Data
           description: "To indicate whether a dataset contains sensitive data. Sensitive
