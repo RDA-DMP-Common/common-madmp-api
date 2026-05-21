@@ -64,12 +64,28 @@ paths:
     get:
       summary: List/search DMPs
       description: |
-        This endpoint lists all DMPs or allows for creating a filtered list. When filters are provided,
-        all filter are applied (AND relationship). For filters supporting lists, the individual values are applied
-        as an OR relationship.
+        Lists either all DMPs accessible to the user, or a filtered subset of all DMPs. When
+        multiple filter parameters are provided, all filters are applied together (AND
+        relationship). For parameters that accept multiple values, the values are applied
+        as an OR relationship, i.e., a DMP matches if it satisfies any of the listed values
+        for that parameter.
 
-        For items accepting more than one value you may pass multiple values by repeating the parameter in the
-        query string for each item.
+        Multi-value parameters are passed by repeating the parameter name in the query
+        string, for example:
+          languages[]=eng&languages[]=deu
+
+        Implementations MUST return a 400 (invalid_query_string) if a parameter value
+        does not conform to the expected format or enumeration. Implementations MUST
+        also return a 400 (invalid_query_string) if a parameter value type is not the
+        expected type for that parameter.
+
+        All date and date-time values MUST be expressed in ISO 8601 format with a
+        timezone offset. Implementations MUST treat timestamps as UTC if no timezone
+        is specified, but SHOULD reject ambiguous inputs with a 400 error.
+
+        Filters that traverse nested structures (dataset, distribution, host, license)
+        match a DMP if at least one element in the relevant array satisfies the
+        condition, unless otherwise stated.
       operationId: listDMPs
       tags:
         - DMP
@@ -77,7 +93,10 @@ paths:
         - name: offset
           in: query
           required: false
-          description: Number of items to skip from the start.
+          description: Number of items to skip from the start of the result set. Used together
+            with count for pagination. The first page is offset=0. Implementations
+            MUST return results in a stable order when paginating; the sort[] parameter
+            controls that order.
           schema:
             title: Offset
             type: integer
@@ -86,15 +105,29 @@ paths:
         - name: count
           in: query
           required: false
+          description: |
+            The maximum number of DMPs to return in this page (page size). Use
+            total_count in the response body together with offset to determine
+            whether further pages exist.
           schema:
             type: integer
             minimum: 1
             maximum: 100
             default: 20
-          description: Number of items to fetch.
         - name: sort[]
           description: |
-            A list of fields to sort by with the sort order.
+            One or more sort fields with direction. When multiple values are provided,
+            sorting is applied left to right. Implementations MUST support at least
+            created,desc. Support for other values is RECOMMENDED.
+
+            Sort fields correspond to top-level DMP fields:
+              - title    — dmp.title (lexicographic)
+              - created  — dmp.created (ISO 8601 date-time)
+              - modified — dmp.modified (ISO 8601 date-time)
+              - language — dmp.language (ISO 639-3 code, lexicographic)
+
+            Implementations that do not support a requested sort field MUST return a
+            400 (invalid_query_string) rather than silently falling back to a default.
           in: query
           required: false
           schema:
@@ -112,112 +145,343 @@ paths:
                 - modified,desc
                 - language,asc
                 - language,desc
-                - embargo,asc
-                - embargo,desc
-                - keyword,asc
-                - keyword,desc
         - name: created_before
           in: query
           required: false
+          description: |
+            Return only DMPs first created before this date-time (exclusive).
+            Matches against dmp.created, which records the date and time of the first
+            version of the DMP and is never changed in subsequent versions.
+            Value must be an ISO 8601 date-time string including timezone, e.g.
+            2024-01-01T00:00:00Z.
           schema:
             type: string
             format: date-time
         - name: created_after
           in: query
           required: false
+          description: |
+            Return only DMPs first created after this date-time (exclusive).
+            Matches against dmp.created. See created_before for format requirements.
           schema:
             type: string
             format: date-time
         - name: modified_before
           in: query
           required: false
+          description: |
+            Return only DMPs last modified before this date-time (exclusive).
+            Matches against dmp.modified, which is updated every time the DMP changes
+            and serves as the version indicator. See created_before for format
+            requirements.
           schema:
             type: string
             format: date-time
         - name: modified_after
           in: query
           required: false
+          description: |
+            Return only DMPs last modified after this date-time (exclusive).
+            Matches against dmp.modified. See created_before for format requirements.
           schema:
             type: string
             format: date-time
+        - name: dmp_alternate_identifier[]
+          in: query
+          required: false
+          description: |
+            Look up a DMP using alternate identifier values — that is, a secondary or
+            local identifier that is not the DMP's canonical persistent identifier
+            (dmp.dmp_id). Matches against dmp.alternate_identifier[].identifier
+            (exact string match).
+          schema:
+            type: array
+            items:
+              type: string
+            example: ["E-GEOD-34814", "A-FE1W-12345"]
         - name: languages[]
           in: query
           required: false
+          description: |
+            Filter by the language of the DMP itself. Values are ISO 639-3 three-letter
+            language codes as defined in the LanguageCode schema.
+
+            Matches against dmp.language, which describes the language the DMP is
+            written in (not the language of the described datasets). Multiple values
+            are OR-combined.
           schema:
             type: array
             items:
               $ref: "#/components/schemas/LanguageCode"
+            example: [ "eng", "deu" ]
         - name: contact_ids[]
           in: query
           required: false
+          description: |
+            Filter by the identifier of the DMP contact person. The contact is the
+            party who can provide information about the DMP; they are not necessarily
+            the creator.
+
+            Each value in the array should be a flat identifier string.
+
+            Matches against dmp.contact.contact_id.identifier. Multiple values are OR-combined.
           schema:
             type: array
             items:
-              $ref: "#/components/schemas/ContactID"
+              type: string
+            example: ["0000-0000-0000-0000", "1234-5678-9101-1121"]
         - name: contributor_ids[]
           in: query
           required: false
+          description: |
+            Filter by the identifier of one or more DMP contributors. Contributors are
+            people involved in data management roles (e.g. DataManager, Researcher).
+
+            Each value in the array should be a flat identifier string.
+
+            Matches against dmp.contributor[].contributor_id.identifier. Multiple values are
+            OR-combined.
           schema:
             type: array
             items:
-              $ref: "#/components/schemas/ContributorID"
+              type: string
+            example: ["0000-0000-0000-0000", "1234-5678-9101-1121"]
         - name: dataset_ids[]
           in: query
           required: false
+          description: |
+            Filter by the identifier of one or more datasets described in the DMP.
+
+            Each value in the array should be a flat identifier string.
+
+            Matches against dmp.dataset[].dataset_id.identifier. Multiple values are OR-combined;
+            a DMP matches if any of its datasets matches any listed ID.
           schema:
             type: array
             items:
-              $ref: "#/components/schemas/DatasetID"
+              type: string
+            example: ["11353/10.923628", "12345/67.891011"]
+        - name: dataset_personal_data[]
+          in: query
+          required: false
+          description: |
+            Filter by whether any dataset in the DMP contains personal data. Personal
+            data refers to any information that can identify an individual, such as
+            names, birthdates, addresses, or voice recordings.
+
+            Matches against dmp.dataset[].personal_data.
+            Multiple values are OR-combined; a DMP matches if any dataset's
+            personal_data value equals any listed value.
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/Booleanish"
+            example: [ "yes", "unknown" ]
         - name: metadata_standard_ids[]
           in: query
           required: false
+          description: |
+            Filter by the metadata standard used to describe one or more datasets.
+            Each value in the array should be a flat identifier string.
+            The identifier is typically a URL pointing to the standard specification.
+
+            Matches against dmp.dataset[].metadata[].metadata_standard_id.identifier. Multiple
+            values are OR-combined.
           schema:
             type: array
             items:
-              $ref: "#/components/schemas/MetadataStandardID"
+              type: string
+            example: ["http://www.dublincore.org/specifications/dublin-core/dcmi-terms/"]
+        - name: distribution_formats[]
+          in: query
+          required: false
+          description: |
+            Filter DMPs to those containing at least one distribution whose format
+            field matches any of the specified MIME types. Values should follow IANA
+            media type notation (https://www.iana.org/assignments/media-types/media-types.xhtml).
+            If no appropriate IANA type exists, the common name for the format is
+            acceptable, following the RDA DMP Common Standard.
+
+            Multiple values are OR-combined: a DMP matches if any distribution across
+            any of its datasets matches any listed format.
+
+            Matches against dmp.dataset[].distribution[].format[].
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/MIMEType"
+          examples:
+            zip:
+              value: [ "application/zip" ]
+              summary: ZIP distributions (both common MIME types)
+            tabular:
+              value: [ "text/csv", "application/json" ]
+              summary: Tabular or JSON distributions
+        - name: distribution_data_access[]
+          in: query
+          required: false
+          description: |
+            Filter DMPs to those containing at least one distribution with the
+            specified data access mode.
+
+            Matches against dmp.dataset[].distribution[].data_access. Multiple values
+            are OR-combined.
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/DataAccess"
+            example: [ "open" ]
+        - name: host_titles[]
+          in: query
+          required: false
+          description: |
+            Filter DMPs to those where at least one distribution host has a name
+            matching a string in this array. Matching is case-insensitive.
+
+            Matches against dmp.dataset[].distribution[].host.title.
+          schema:
+            type: array
+            items:
+              type: string
+            example: ["Zenodo"]
         - name: dmp_ids[]
           in: query
           required: false
+          description: |
+            Filter by the persistent identifier of one or more DMPs.
+
+            Each value in the array should be a flat identifier string (e.g., a DOI).
           schema:
             type: array
             items:
-              $ref: "#/components/schemas/DMPID"
+              type: string
+            example: ["10.1371/journal.pcbi.1006750", "10.7891/journal.ex.5665751"]
+        - name: dmp_identifier[]
+          in: query
+          required: false
+          description: |
+            Look up a DMP by its persistent identifier value, e.g. a DOI.
+            Matches against dmp.dmp_id.identifier (exact string match).
+          schema:
+            type: array
+            items:
+              type: string
+            example: [ "10.1371/journal.pcbi.1006750", "12.3456/article.ex.123456" ]
+        - name: license_refs[]
+          in: query
+          required: false
+          description: |
+            Filter DMPs to those where at least one distribution carries a license
+            matching any of the specified license reference URLs. Values must be
+            exact URL matches against the license_ref field.
+
+            The RDA DMP Common Standard uses URLs to identify licenses. Clients
+            should use canonical license URLs, for example:
+              - https://creativecommons.org/licenses/by/4.0/      (CC BY 4.0)
+              - https://creativecommons.org/publicdomain/zero/1.0/ (CC0 1.0)
+              - https://opensource.org/licenses/MIT               (MIT)
+
+            Implementations SHOULD normalise trailing slashes before matching.
+            Multiple values are OR-combined.
+
+            Matches against dmp.dataset[].distribution[].license[].license_ref.
+          schema:
+            type: array
+            items:
+              type: string
+              format: uri
+          examples:
+            cc_by:
+              value: [ "https://creativecommons.org/licenses/by/4.0/" ]
+              summary: CC BY 4.0 only
+            open:
+              value:
+                - "https://creativecommons.org/licenses/by/4.0/"
+                - "https://creativecommons.org/publicdomain/zero/1.0/"
+              summary: CC BY 4.0 or CC0 1.0
         - name: funder_ids[]
           in: query
           required: false
+          description: |
+            Filter by the identifier of one or more funders associated with projects
+            in the DMP.
+
+            Each value in the array should be a flat identifier string.
+            It is recommended to use CrossRef Funder Registry identifiers
+            (https://www.crossref.org/services/funder-registry/). Suggested
+            identifier types: fundref, url.
+
+            Matches against dmp.project[].funding[].funder_id.identifier. Multiple values are
+            OR-combined.
           schema:
             type: array
             items:
-              $ref: "#/components/schemas/FunderID"
+              type: string
+            example: ["501100002428", "781144086460"]
         - name: grant_ids[]
           in: query
           required: false
+          description: |
+            Filter by the identifier of one or more grants associated with projects
+            in the DMP.
+
+            Each value in the array should be a flat identifier string.
+
+            Matches against dmp.project[].funding[].grant_id.identifier. Multiple values are
+            OR-combined.
           schema:
             type: array
             items:
-              $ref: "#/components/schemas/GrantID"
-        - name: query
+              type: string
+            example: ["http://example.com/grants/776242", "http://example.com/grants/123456"]
+        - name: funding_status[]
           in: query
           required: false
+          description: |
+            Filter by the funding status of any project funding entry in the DMP.
+
+            Matches against dmp.project[].funding[].funding_status. Multiple values
+            are OR-combined.
           schema:
-            type: string
-        - name: ethical_issues_exist
+            type: array
+            items:
+              $ref: "#/components/schemas/FundingStatus"
+            example: ["granted"]
+        - name: ethical_issues_exist[]
           in: query
           required: false
+          description: |
+            Filter by whether the DMP declares ethical issues.
+
+            Matches against dmp.ethical_issues_exist following the RDA Booleanish
+            type (yes, no, unknown).
           schema:
-            type: boolean
-        - name: embargo_before
+            type: array
+            items:
+              $ref: "#/components/schemas/Booleanish"
+            example: ["yes", "unknown"]
+        - name: query[]
           in: query
           required: false
+          description: |
+            A free-text search string matched against human-readable fields of the DMP.
+
+            Implementations MUST perform case-insensitive matching against at minimum:
+              - dmp.title
+              - dmp.description
+              - dmp.dataset[].title
+              - dmp.dataset[].description
+
+            Implementations MUST NOT use this parameter to filter on structured fields
+            such as IDs, dates, or formats — use the dedicated filter parameters for
+            that. Structured filtering via this parameter produces inconsistent results
+            across implementations.
           schema:
-            type: string
-            format: date
-        - name: embargo_after
-          in: query
-          required: false
-          schema:
-            type: string
-            format: date
+            type: array
+            items:
+              type: string
+              maxLength: 500
+            example: ["biodiversity", "climate change"]
       responses:
         200:
           $ref: "#/components/responses/DMPListResponse"
