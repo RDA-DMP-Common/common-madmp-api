@@ -54,6 +54,64 @@ openapi-generator-cli generate \
 2. Conditional updates on `PUT /dmps/{id}`: server implementations must support `If-Unmodified-Since` and return conflicts (`409`) when preconditions fail.
 3. `Last-Modified` propagation: servers should return `Last-Modified` on DMP reads/writes so clients can perform safe conditional updates.
 
+### Recommendations
+
+#### API discovery
+
+Implementations should publish an [RFC 9727](https://www.rfc-editor.org/rfc/rfc9727.html) API catalog at:
+
+```http
+GET /.well-known/api-catalog
+```
+
+This catalog is deployment-level discovery metadata, so it is not modeled directly in [openapi.yaml](openapi.yaml). It allows each institution to choose its own maDMP API base URL, publish local extensions, and still provide a standard discovery entry point for clients.
+
+The response should use the Linkset JSON format:
+
+```http
+Content-Type: application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"
+```
+
+At minimum, the catalog should link from the catalog URI to the maDMP API base URL. Where possible, it should also include `service-desc` links to the deployment-specific OpenAPI description and to this repository's common baseline specification:
+
+```json
+{
+  "linkset": [
+    {
+      "anchor": "https://example.org/.well-known/api-catalog",
+      "item": [
+        { "href": "https://api.example.org/madmp" },
+        { "href": "https://api.example.org/custom" }
+      ]
+    },
+    {
+      "anchor": "https://api.example.org/madmp",
+      "service-desc": [
+        {
+          "href": "https://api.example.org/madmp/openapi.yaml",
+          "type": "application/vnd.oai.openapi"
+        },
+        {
+          "href": "https://raw.githubusercontent.com/RDA-DMP-Common/common-madmp-api/refs/heads/init/openapi.yaml",
+          "type": "application/vnd.oai.openapi"
+        }
+      ]
+    },
+    {
+      "anchor": "https://api.example.org/custom",
+      "service-desc": [
+        {
+          "href": "https://api.example.org/custom/openapi.yaml",
+          "type": "application/vnd.oai.openapi"
+        }
+      ]
+    }
+  ]
+}
+```
+
+Servers should also support `HEAD /.well-known/api-catalog` and return a `Link` header with the `api-catalog` relation. If the same API catalog is reachable on multiple domains, choose one canonical catalog URI and redirect the others to it.
+
 ### HTTP examples
 
 Fetch a DMP with explicit content negotiation:
