@@ -12,3 +12,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 
 - Expanded `README.md` with implementation guidance, local validation steps, and contribution/changelog references.
+- Added a README recommendation for API discovery via the RFC 9727 `/.well-known/api-catalog` Linkset format.
