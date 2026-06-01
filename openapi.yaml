@@ -108,8 +108,10 @@ paths:
           in: query
           required: false
           description: |
-            The maximum number of DMPs to return in this page (page size). Use
-            total_count in the response body together with offset to determine
+            The maximum number of DMPs to return in this page (page size).
+            A 400 (invalid_query_string) should be returned if the requested
+            count exceeds the maximum number of DMPs allowed by the implementation.
+            Use total_count in the response body together with offset to determine
             whether further pages exist.
           schema:
             type: integer
@@ -151,7 +153,7 @@ paths:
           in: query
           required: false
           description: |
-            Return only DMPs first created before this date-time (exclusive).
+            Return only DMPs first created before this date-time (inclusive).
             Matches against dmp.created as specified in the RDA-DMP-Common-Standard,
             which records the date and time of the first version of the DMP and is never changed in subsequent versions.
             Value must be an ISO 8601 date-time string including timezone, e.g.
@@ -173,7 +175,7 @@ paths:
           in: query
           required: false
           description: |
-            Return only DMPs last modified before this date-time (exclusive).
+            Return only DMPs last modified before this date-time (inclusive).
             Matches against dmp.modified  as specified in the RDA-DMP-Common-Standard,
             which is updated every time the DMP changes and serves as the version indicator.
             See created_before for format
@@ -268,6 +270,18 @@ paths:
             items:
               $ref: "#/components/schemas/Booleanish"
             example: [ "yes", "unknown" ]
+        - name: dataset_sensitive_data[]
+          in: query
+          required: false
+          description: |
+            Filter by whether any dataset in the DMP contains sensitive data.
+
+            Matches against dmp.dataset[].sensitive_data as specified in the RDA-DMP-Common-Standard.
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/Booleanish"
+            example: [ "yes", "unknown" ]
         - name: metadata_standard_ids[]
           in: query
           required: false
@@ -312,6 +326,19 @@ paths:
             items:
               $ref: "#/components/schemas/DataAccess"
             example: [ "open" ]
+        - name: host_ids[]
+          in: query
+          required: false
+          description: |
+            Filter by the persistent identifier of a host of any dataset's distribution(s).
+
+            Matches against dmp.dataset[].distribution[].host.host_id.identifier as specified in the
+            RDA-DMP-Common-Standard.
+          schema:
+            type: array
+            items:
+              type: string
+            example: [ "https://www.re3data.org/repository/r3d100010468" ]
         - name: host_titles[]
           in: query
           required: false
@@ -420,6 +447,10 @@ paths:
               - dmp.description
               - dmp.dataset[].title
               - dmp.dataset[].description
+
+            It is recommended to also perform case-insensitive matching against:
+              - dmp.project[].title
+              - dmp.project[].description
 
             Implementations MUST NOT use this parameter to filter on structured fields
             such as IDs, dates, or formats — use the dedicated filter parameters for
