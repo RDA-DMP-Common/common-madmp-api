@@ -63,6 +63,9 @@ paths:
   /dmps:
     get:
       summary: List/search DMPs
+      externalDocs:
+        description: RDA-DMP-Common-Standard
+        url: https://github.com/RDA-DMP-Common/RDA-DMP-Common-Standard
       description: |
         Lists either all DMPs accessible to the user, or a filtered subset of all DMPs. When
         multiple filter parameters are provided, all filters are applied together (AND
@@ -83,9 +86,8 @@ paths:
         timezone offset. Implementations MUST treat timestamps as UTC if no timezone
         is specified, but SHOULD reject ambiguous inputs with a 400 error.
 
-        Filters that traverse nested structures (dataset, distribution, host, license)
-        match a DMP if at least one element in the relevant array satisfies the
-        condition, unless otherwise stated.
+        For filters traversing array-valued fields, a DMP matches if any element in
+        the corresponding array satisfies the filter condition, unless otherwise specified.
       operationId: listDMPs
       tags:
         - DMP
@@ -120,7 +122,7 @@ paths:
             sorting is applied left to right. Implementations MUST support at least
             created,desc. Support for other values is RECOMMENDED.
 
-            Sort fields correspond to top-level DMP fields:
+            Sort fields correspond to top-level DMP fields as specified in the RDA-DMP-Common-Standard:
               - title    — dmp.title (lexicographic)
               - created  — dmp.created (ISO 8601 date-time)
               - modified — dmp.modified (ISO 8601 date-time)
@@ -150,8 +152,8 @@ paths:
           required: false
           description: |
             Return only DMPs first created before this date-time (exclusive).
-            Matches against dmp.created, which records the date and time of the first
-            version of the DMP and is never changed in subsequent versions.
+            Matches against dmp.created as specified in the RDA-DMP-Common-Standard,
+            which records the date and time of the first version of the DMP and is never changed in subsequent versions.
             Value must be an ISO 8601 date-time string including timezone, e.g.
             2024-01-01T00:00:00Z.
           schema:
@@ -162,7 +164,8 @@ paths:
           required: false
           description: |
             Return only DMPs first created after this date-time (exclusive).
-            Matches against dmp.created. See created_before for format requirements.
+            Matches against dmp.created as specified in the RDA-DMP-Common-Standard.
+            See created_before for format requirements.
           schema:
             type: string
             format: date-time
@@ -171,8 +174,9 @@ paths:
           required: false
           description: |
             Return only DMPs last modified before this date-time (exclusive).
-            Matches against dmp.modified, which is updated every time the DMP changes
-            and serves as the version indicator. See created_before for format
+            Matches against dmp.modified  as specified in the RDA-DMP-Common-Standard,
+            which is updated every time the DMP changes and serves as the version indicator.
+            See created_before for format
             requirements.
           schema:
             type: string
@@ -182,7 +186,8 @@ paths:
           required: false
           description: |
             Return only DMPs last modified after this date-time (exclusive).
-            Matches against dmp.modified. See created_before for format requirements.
+            Matches against dmp.modified as specified in the RDA-DMP-Common-Standard.
+            See created_before for format requirements.
           schema:
             type: string
             format: date-time
@@ -192,8 +197,7 @@ paths:
           description: |
             Look up a DMP using alternate identifier values — that is, a secondary or
             local identifier that is not the DMP's canonical persistent identifier
-            (dmp.dmp_id). Matches against dmp.alternate_identifier[].identifier
-            (exact string match).
+            (dmp.dmp_id). Matches against dmp.alternate_identifier[].identifier as specified in the RDA-DMP-Common-Standard.
           schema:
             type: array
             items:
@@ -204,11 +208,10 @@ paths:
           required: false
           description: |
             Filter by the language of the DMP itself. Values are ISO 639-3 three-letter
-            language codes as defined in the LanguageCode schema.
+            language codes.
 
-            Matches against dmp.language, which describes the language the DMP is
-            written in (not the language of the described datasets). Multiple values
-            are OR-combined.
+            Matches against dmp.language  as specified in the RDA-DMP-Common-Standard, which describes the language the DMP is
+            written in (not the language of the described datasets).
           schema:
             type: array
             items:
@@ -222,9 +225,7 @@ paths:
             party who can provide information about the DMP; they are not necessarily
             the creator.
 
-            Each value in the array should be a flat identifier string.
-
-            Matches against dmp.contact.contact_id.identifier. Multiple values are OR-combined.
+            Matches against dmp.contact.contact_id.identifier as specified in the RDA-DMP-Common-Standard.
           schema:
             type: array
             items:
@@ -237,10 +238,7 @@ paths:
             Filter by the identifier of one or more DMP contributors. Contributors are
             people involved in data management roles (e.g. DataManager, Researcher).
 
-            Each value in the array should be a flat identifier string.
-
-            Matches against dmp.contributor[].contributor_id.identifier. Multiple values are
-            OR-combined.
+            Matches against dmp.contributor[].contributor_id.identifier as specified in the RDA-DMP-Common-Standard.
           schema:
             type: array
             items:
@@ -252,10 +250,7 @@ paths:
           description: |
             Filter by the identifier of one or more datasets described in the DMP.
 
-            Each value in the array should be a flat identifier string.
-
-            Matches against dmp.dataset[].dataset_id.identifier. Multiple values are OR-combined;
-            a DMP matches if any of its datasets matches any listed ID.
+            Matches against dmp.dataset[].dataset_id.identifier as specified in the RDA-DMP-Common-Standard.
           schema:
             type: array
             items:
@@ -265,13 +260,9 @@ paths:
           in: query
           required: false
           description: |
-            Filter by whether any dataset in the DMP contains personal data. Personal
-            data refers to any information that can identify an individual, such as
-            names, birthdates, addresses, or voice recordings.
+            Filter by whether any dataset in the DMP contains personal data.
 
-            Matches against dmp.dataset[].personal_data.
-            Multiple values are OR-combined; a DMP matches if any dataset's
-            personal_data value equals any listed value.
+            Matches against dmp.dataset[].personal_data as specified in the RDA-DMP-Common-Standard.
           schema:
             type: array
             items:
@@ -282,11 +273,8 @@ paths:
           required: false
           description: |
             Filter by the metadata standard used to describe one or more datasets.
-            Each value in the array should be a flat identifier string.
-            The identifier is typically a URL pointing to the standard specification.
 
-            Matches against dmp.dataset[].metadata[].metadata_standard_id.identifier. Multiple
-            values are OR-combined.
+            Matches against dmp.dataset[].metadata[].metadata_standard_id.identifier as specified in the RDA-DMP-Common-Standard.
           schema:
             type: array
             items:
@@ -297,15 +285,9 @@ paths:
           required: false
           description: |
             Filter DMPs to those containing at least one distribution whose format
-            field matches any of the specified MIME types. Values should follow IANA
-            media type notation (https://www.iana.org/assignments/media-types/media-types.xhtml).
-            If no appropriate IANA type exists, the common name for the format is
-            acceptable, following the RDA DMP Common Standard.
+            field matches any of the specified MIME types.
 
-            Multiple values are OR-combined: a DMP matches if any distribution across
-            any of its datasets matches any listed format.
-
-            Matches against dmp.dataset[].distribution[].format[].
+            Matches against dmp.dataset[].distribution[].format[] as specified in the RDA-DMP-Common-Standard.
           schema:
             type: array
             items:
@@ -324,8 +306,7 @@ paths:
             Filter DMPs to those containing at least one distribution with the
             specified data access mode.
 
-            Matches against dmp.dataset[].distribution[].data_access. Multiple values
-            are OR-combined.
+            Matches against dmp.dataset[].distribution[].data_access as specified in the RDA-DMP-Common-Standard.
           schema:
             type: array
             items:
@@ -336,9 +317,9 @@ paths:
           required: false
           description: |
             Filter DMPs to those where at least one distribution host has a name
-            matching a string in this array. Matching is case-insensitive.
+            matching a string in this array.
 
-            Matches against dmp.dataset[].distribution[].host.title.
+            Matches against dmp.dataset[].distribution[].host.title as specified in the RDA-DMP-Common-Standard.
           schema:
             type: array
             items:
@@ -350,41 +331,22 @@ paths:
           description: |
             Filter by the persistent identifier of one or more DMPs.
 
-            Each value in the array should be a flat identifier string (e.g., a DOI).
+            Matches against dmp.dmp_id.identifier as specified in the RDA-DMP-Common-Standard
           schema:
             type: array
             items:
               type: string
             example: ["10.1371/journal.pcbi.1006750", "10.7891/journal.ex.5665751"]
-        - name: dmp_identifier[]
-          in: query
-          required: false
-          description: |
-            Look up a DMP by its persistent identifier value, e.g. a DOI.
-            Matches against dmp.dmp_id.identifier (exact string match).
-          schema:
-            type: array
-            items:
-              type: string
-            example: [ "10.1371/journal.pcbi.1006750", "12.3456/article.ex.123456" ]
         - name: license_refs[]
           in: query
           required: false
           description: |
             Filter DMPs to those where at least one distribution carries a license
-            matching any of the specified license reference URLs. Values must be
-            exact URL matches against the license_ref field.
-
-            The RDA DMP Common Standard uses URLs to identify licenses. Clients
-            should use canonical license URLs, for example:
-              - https://creativecommons.org/licenses/by/4.0/      (CC BY 4.0)
-              - https://creativecommons.org/publicdomain/zero/1.0/ (CC0 1.0)
-              - https://opensource.org/licenses/MIT               (MIT)
+            matching any of the specified license reference URLs.
 
             Implementations SHOULD normalise trailing slashes before matching.
-            Multiple values are OR-combined.
 
-            Matches against dmp.dataset[].distribution[].license[].license_ref.
+            Matches against dmp.dataset[].distribution[].license[].license_ref as specified in the RDA-DMP-Common-Standard.
           schema:
             type: array
             items:
@@ -406,13 +368,7 @@ paths:
             Filter by the identifier of one or more funders associated with projects
             in the DMP.
 
-            Each value in the array should be a flat identifier string.
-            It is recommended to use CrossRef Funder Registry identifiers
-            (https://www.crossref.org/services/funder-registry/). Suggested
-            identifier types: fundref, url.
-
-            Matches against dmp.project[].funding[].funder_id.identifier. Multiple values are
-            OR-combined.
+            Matches against dmp.project[].funding[].funder_id.identifier as specified in the RDA-DMP-Common-Standard.
           schema:
             type: array
             items:
@@ -425,10 +381,7 @@ paths:
             Filter by the identifier of one or more grants associated with projects
             in the DMP.
 
-            Each value in the array should be a flat identifier string.
-
-            Matches against dmp.project[].funding[].grant_id.identifier. Multiple values are
-            OR-combined.
+            Matches against dmp.project[].funding[].grant_id.identifier as specified in the RDA-DMP-Common-Standard.
           schema:
             type: array
             items:
@@ -440,8 +393,7 @@ paths:
           description: |
             Filter by the funding status of any project funding entry in the DMP.
 
-            Matches against dmp.project[].funding[].funding_status. Multiple values
-            are OR-combined.
+            Matches against dmp.project[].funding[].funding_status as specified in the RDA-DMP-Common-Standard.
           schema:
             type: array
             items:
@@ -452,9 +404,6 @@ paths:
           required: false
           description: |
             Filter by whether the DMP declares ethical issues.
-
-            Matches against dmp.ethical_issues_exist following the RDA Booleanish
-            type (yes, no, unknown).
           schema:
             type: array
             items:
@@ -685,8 +634,7 @@ components:
             $ref: "#/components/schemas/DMPListResponseBody"
     AuthenticationRequiredResponse:
       description: |
-        Authentication required to delete the DMP. The implementation should always return this error code for
-        unauthenticated users as deletion always requires authentication.
+        The request could not be authenticated because authentication credentials are missing, invalid, or expired.
       content:
         application/vnd.org.rd-alliance.dmp-common.v1.2+json:
           schema:
@@ -716,7 +664,7 @@ components:
             $ref: "#/components/schemas/ConflictError"
     DMPNotFoundResponse:
       description: |
-        DMP not found or not enough permissions to delete the specified DMP.
+        DMP not found or not enough permissions to access the specified DMP.
         Security note: implementations may return this error code even if the DMP exists but the authenticated user
         has no permissions to view it in order to avoid leaking information about the existence of a DMP. This may
         especially be important if the DMP tool uses numeric IDs to avoid enabling an enumeration of possible DMP
@@ -739,7 +687,7 @@ components:
             $ref: "#/components/schemas/GenericError"
     InsufficientPermissionsResponse:
       description: |
-        Insufficient permissions to delete the specified a DMP.
+        The authenticated client does not have permission to access the requested resource.
         Note: the implementation may opt to return a 404 instead to avoid leaking information about the
         existence of a DMP with the specified ID if the user has no permissions to at least view this DMP. The
         implementation SHOULD return this error code if the user has at least read permissions for this DMP.
