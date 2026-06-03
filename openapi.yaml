@@ -235,6 +235,12 @@ paths:
         Create or import a DMP from a JSON-formed DMP object. The implementation may opt to allow the creation of
         draft DMPs with formally valid, but incomplete fields. Alternatively, the implementation may reject incomplete
         DMPs if it cannot store them.
+
+        Since some tools might only partially support the RDA Common Standard or may adopt a best-effort approach,
+        the cardinality of some fields in the output might deviate from what is expected. Similarly, it is possible
+        in some cases that the vocabularies expected by the tool do not match the RDA Common Standard.
+        Therefore, it is the responsibility of the client to compare the result (which corresponds to what has been
+        processed by the tool) with the request and to act accordingly if necessary.
       operationId: createDMP
       tags:
         - DMP
@@ -326,6 +332,12 @@ paths:
       description: |
         Completely overwrite a DMP with the specified data. The server MUST honor the If-Unmodified-Since and IF-Match
         headers if present.
+
+        Since some tools might only partially support the RDA Common Standard or may adopt a best-effort approach,
+        the cardinality of some fields in the output might deviate from what is expected. Similarly, it is possible
+        in some cases that the vocabularies expected by the tool do not match the RDA Common Standard.
+        Therefore, it is the responsibility of the client to compare the result (which corresponds to what has been
+        processed by the tool) with the request and to act accordingly if necessary.
       parameters:
         - name: id
           in: path
