@@ -50,7 +50,7 @@ openapi-generator-cli generate \
 
 ### Required behavior
 
-1. Content negotiation with `Accept`: client and server implementations must support media-type negotiation, including the standard media type `application/vnd.org.rd-alliance.dmp-common.v1.2+json`.
+1. Content negotiation with `Accept`: client and server implementations must support media-type negotiation, including the standard media type `application/vnd.org.rd-alliance.dmp-common.v1.3+json` (RDA DMP Common Standard 1.3). Servers may additionally support earlier versions, such as `application/vnd.org.rd-alliance.dmp-common.v1.2+json`, as described in [openapi.yaml](openapi.yaml).
 2. Conditional updates on `PUT /dmps/{id}`: server implementations must support `If-Unmodified-Since` and return conflicts (`409`) when preconditions fail.
 3. `Last-Modified` propagation: servers should return `Last-Modified` on DMP reads/writes so clients can perform safe conditional updates.
 
@@ -118,7 +118,7 @@ Fetch a DMP with explicit content negotiation:
 
 ```bash
 curl -i \
-  -H "Accept: application/vnd.org.rd-alliance.dmp-common.v1.2+json" \
+  -H "Accept: application/vnd.org.rd-alliance.dmp-common.v1.3+json" \
   "https://example.org/dmps/123"
 ```
 
@@ -126,8 +126,8 @@ Update safely with `If-Unmodified-Since`:
 
 ```bash
 curl -i -X PUT \
-  -H "Accept: application/vnd.org.rd-alliance.dmp-common.v1.2+json" \
-  -H "Content-Type: application/vnd.org.rd-alliance.dmp-common.v1.2+json" \
+  -H "Accept: application/vnd.org.rd-alliance.dmp-common.v1.3+json" \
+  -H "Content-Type: application/vnd.org.rd-alliance.dmp-common.v1.3+json" \
   -H "If-Unmodified-Since: Tue, 25 Mar 2025 14:13:00 GMT" \
   --data @dmp.json \
   "https://example.org/dmps/123"
