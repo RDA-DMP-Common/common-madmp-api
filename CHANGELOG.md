@@ -11,6 +11,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Clarify 409 Conflict semantics for POST, PUT, and DELETE operations [#35](https://github.com/RDA-DMP-Common/common-madmp-api/pull/35)
+  - Added `dmp_stale` for failed `If-Unmodified-Since` / `If-Match` preconditions.
+  - Documented `dmp_already_exists` as a reachable conflict error for duplicate DMPs.
+  - Replaced the previous generic `ConflictError` with `GenericConflictError`, which carries the existing `conflict` error code.
 - Aligned the specification with version 1.3 of the RDA DMP Common Standard (API version `0.2.0`):
   - Changed the standard media type to `application/vnd.org.rd-alliance.dmp-common.v1.3+json` and documented optional support for earlier versions (e.g. 1.2) via content negotiation.
   - Added `restricted` as a value of `data_access` and deprecated `shared` ([RDA-DMP-Common-Standard#150](https://github.com/RDA-DMP-Common/RDA-DMP-Common-Standard/pull/150)).
