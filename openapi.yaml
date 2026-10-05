@@ -58,11 +58,12 @@ info:
     Client and server implementations *may* agree on a different serialization to JSON, such as XML, by specifying the
     corresponding suffix. Clients and servers *must* support JSON serialization.
 
-    # Conflict resolution
+    # Optimistic concurrency for updates
 
-    This API makes use of the `Last-Modified` headers in order to resolve conflicts. When updating a DMP, consider
-    passing the `Last-Modified` header from the response in the `If-Unmodified-Since` header in the PUT request. If the
-    DMP has been modified since you last fetched the data, the server will return a 409 header.
+    This API makes use of the `Last-Modified` header in order to detect conflicting updates. When updating a DMP,
+    consider passing the `Last-Modified` header from the response in the `If-Unmodified-Since` header in the PUT
+    request. If the DMP has been modified since you last fetched the data, the server will return a 409 Conflict
+    response (`dmp_stale`).
 
     Server implementations should always update the modified field of the DMP to the server time on PUT and return it
     in the `Last-Modified` header. On PUT, server implementations should compare the `If-Unmodified-Since` header with
@@ -717,9 +718,7 @@ components:
           schema:
             $ref: "#/components/schemas/BadRequestError"
     ConflictResponse:
-      description: |
-        A precondition specified in the If-Unmodified-Since or If-Match header cannot be
-        fulfilled. The client should apply the modifications again and resubmit the request.
+      description: The request conflicts with the current state of the resource.
       content:
         application/vnd.org.rd-alliance.dmp-common.v1.3+json:
           schema:
@@ -902,21 +901,6 @@ components:
               title: Error code
               type: string
               const: "unsupported_media_type"
-    DMPAlreadyExistsError:
-      title: "DMP already exists"
-      description: |
-        The DMP system has identified this DMP to be already present in the system based on its DMP ID or other
-        characteristics. The error response SHOULD contain the existing DMP ID.
-      allOf:
-        - $ref: "#/components/schemas/Error"
-        - type: object
-          required:
-            - error_code
-          properties:
-            error_code:
-              title: Error code
-              type: string
-              const: "dmp_already_exists"
     DMPNotFoundError:
       title: "DMP not found / insufficient permissions to access DMP"
       description: |
@@ -949,9 +933,51 @@ components:
               const: "invalid_query_string"
     ConflictError:
       title: "Conflict"
+      description: "The request conflicts with the current state of the resource."
+      oneOf:
+        - $ref: "#/components/schemas/DMPAlreadyExistsError"
+        - $ref: "#/components/schemas/DMPStaleError"
+        - $ref: "#/components/schemas/GenericConflictError"
+      discriminator:
+        propertyName: error_code
+        mapping:
+          dmp_already_exists: "#/components/schemas/DMPAlreadyExistsError"
+          dmp_stale: "#/components/schemas/DMPStaleError"
+          conflict: "#/components/schemas/GenericConflictError"
+    DMPAlreadyExistsError:
+      title: "DMP already exists"
       description: |
-        The server failed to apply the patch because a JSON Patch test failed. If the patch applies successfully, but
-        results in an invalid DMP, an DMPInvalidResponse (400) is returned instead.
+        The DMP system has identified this DMP to be already present in the system based on its DMP ID or other
+        characteristics. The error response SHOULD contain the existing DMP ID.
+      allOf:
+        - $ref: "#/components/schemas/Error"
+        - type: object
+          required:
+            - error_code
+          properties:
+            error_code:
+              title: Error code
+              type: string
+              const: "dmp_already_exists"
+    DMPStaleError:
+      title: "Stale DMP"
+      description: |
+        A precondition specified in the If-Unmodified-Since or If-Match header cannot be fulfilled, for example
+        because the DMP was modified after the client last fetched it. The client should apply the modifications again
+        and resubmit the request.
+      allOf:
+        - $ref: "#/components/schemas/Error"
+        - type: object
+          required:
+            - error_code
+          properties:
+            error_code:
+              title: Error code
+              type: string
+              const: "dmp_stale"
+    GenericConflictError:
+      title: "Conflict"
+      description: "The request conflicts with the current state of the resource."
       allOf:
         - $ref: "#/components/schemas/Error"
         - type: object
