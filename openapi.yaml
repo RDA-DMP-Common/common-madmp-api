@@ -68,7 +68,7 @@ info:
     Server implementations should always update the modified field of the DMP to the server time on PUT and return it
     in the `Last-Modified` header. On PUT, server implementations should compare the `If-Unmodified-Since` header with
     the stored modified field.
-  version: 0.2.0
+  version: 1.0.0
   license:
     name: Creative Commons Zero v1.0 Universal
     identifier: "CC0-1.0"
